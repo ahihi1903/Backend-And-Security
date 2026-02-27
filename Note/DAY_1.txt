@@ -1,0 +1,55 @@
+DAY 1 – Backend Mindset + NodeJS Core
+
+🎯 Mục tiêu hôm nay:
+
+Hiểu backend thực sự là gì
+
+Hiểu HTTP
+
+Tạo server bằng NodeJS
+
+Hiểu request – response
+
+Hiểu method + URL
+
+Biết debug bằng console
+<------------------------------------->
+
+Phần 1 - Tư Duy Backend
+
+Backend = xử lý logic + dữ liệu
+
+Khi vào 1 địa chỉ thì sẽ xảy ra những gì:
+	1:Browser gửi HTTP req
+	2:Server nhận req
+	3:Server đọc:
+		.Method(Phương pháp)
+		.URL
+		.Header(Tiêu đề)
+	4:Server trả res
+	5:Browser hiển thị
+
+Backend luôn suy nghĩ theo dạng: Method + URL -> xử lý gì?
+<---------------------------------------->
+Phần 4 - Status code:
+
+200 → OK
+201 → Created
+400 → Bad request
+401 → Unauthorized
+403 → Forbidden
+404 → Not found
+500 → Server error
+<------------------------------------------->
+
+Phải tư duy từ method trước(kiểm tra điều kiện,...) rồi sau đó xử lý các điều kiện sau
+
+Method: GET - Lấy 
+	POST - Tao || Thêm mới
+	PUT - Update
+	DELETE - Xóa
+	PATCH - Update một phần
+
+Một URL có thể tư duy thêm nhiều method
+VD: url: /user/4 -> có thể sử dụng method get, put, delete, patch
+    url: /user   -> POST
