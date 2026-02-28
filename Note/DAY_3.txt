@@ -1,0 +1,31 @@
+Ngày 3 – Viết Mini Router giống Express
+
+
+const urlParts = pathname.split("/").filter(Boolean);
+--> pathname: /users/1
+    split("/"): tách theo dấu "/"-> ["","users","1"]
+    filter(Boolean): giữ lại các ptu gt truthy loại bỏ falsy
+    falsy gồm: "", 0, null, undefined, false, NaN
+    --> ["users","1"]	
+
+params chứa nhiểu thông tin không chỉ riêng id
+<------------------------------------->
+khi server hoạt động nó sẽ push hết phần DEFINE ROUTES vào trong mảng  routes thông qua biến const router, biến const router dùng để đưa thông tin phân DEFINE ROUTES vào function addRoute (gọi function addRoute để push). Tiếp đó server sẽ chạy function matchRoute: nó sẽ check xem url client gửi có tồn tại trong mảng không. Nếu có nó sẽ lưu thông tin vào params:
+<------------->
+   VD:	
+     Server:
+	router.get("/users/:id", handlerA)
+	router.get("/users/profile", handlerB)
+     Client: 
+	GET /users/profile
+--> handlerA sẽ match trước và kết thúc math:
+     thứ nhất vì nó xếp trước mà server chạy từ trên xuống dưới nên nó được match trước
+     thứ hai nó có params chứa tt là id:profile (không nên đinh đinh id là số phải đọc kỹ và hiểu code của bản thân)
+	
+	Server:
+		router.get("/:category/:id", handlerA)
+		router.get("/users/:id", handlerB)
+	Client: GET /users/5
+--> match handlerA params: category:user, id:5.
+<------------------->
+Sau khi match xong nếu matched true thì server gắn thông tin có trong params vào req và thực hiện gọi function đã viết(handler)
