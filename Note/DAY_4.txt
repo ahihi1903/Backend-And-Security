@@ -1,0 +1,65 @@
+DAY 4 – Hiểu Async + Tổ chức Code Chuẩn Hơn
+
+🎯 Mục tiêu hôm nay
+
+1.Hiểu rõ synchronous vs asynchronous
+
+2.Hiểu callback, Promise, async/await
+
+3.Tổ chức lại server theo cấu trúc “gần giống dự án thật”
+<-------------------------------->
+
+<-1-> Hiểu async/await thật chắc:
+	Mục tiêu:
+		-Hiểu async là gì
+		-Hiểu await hoạt động như thế nào
+		-Biết vì sao nó giúp code “đọc như synchronous”
+<---------->
+1.ASYNC luôn trả về Promise
+  **Promise:
+  -->Promise(Hứa): là một đối tượng trong JS dùng để xử lý tác vụ bất đồng bộ (asynchronous)
+	-VD: Gọi database, gọi API, Đọc/ghi file, Xử lý mạng
+  -->Trong backend (thường dùng Node.js), Promise giúp bạn xử lý các tác vụ mất thời gian mà không chặn chương trình.
+  -->Promise có 3 trạng thái:
+	-Pending(đang xử lý)
+	-Fulfilled(thành công)
+	-Rejected(thất bại)
+<---------->
+2.Await chỉ dùng được bên trong Async
+<---------->
+3.Await sẽ:
+	-Dừng function
+	-Chờ Promise resolve
+	-Trả về giá trị resolve
+
+<------>
+export {} : khi file có nhiều thứ cần export
+VD: export {users, getUser,...};
+nhưng khi import phải trùng với tên khi export
+VD: import {users, getUser,...} from".."
+--------------
+export default: khi file có một thứ chính
+VD: export default matchRoute;
+nhưng khi import không nhất thiết phải trùng với tên export
+<--------------->
+
+server.js
+routes/
+controllers/
+model/
+middlewares/
+
+Flow hiện tại:
+server
+   ↓
+matchRoute
+   ↓
+route handler
+   ↓
+controller
+   ↓
+model
+<--------------->
+→ Muốn dùng await thì phải wrap bằng Promise.
+-> sử dụng try/catch thì pk sử dụng await trong try để có thể bắt đc error
+
