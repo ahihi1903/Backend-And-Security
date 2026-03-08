@@ -1,0 +1,53 @@
+DAY 5 – Middleware System
+
+Middleware là function nằm giữa request và controller.
+----------
+Flow hiện tại của bạn:
+request
+   ↓
+matchRoute
+   ↓
+controller
+   ↓
+response
+---------
+Sau khi thêm middleware:
+request
+   ↓
+matchRoute
+   ↓
+middleware 1
+   ↓
+middleware 2
+   ↓
+controller
+   ↓
+response
+<------------------>
+Middleware có dạng:
+
+function middleware(req, res, next) {
+  console.log("middleware chạy");
+
+  next(); // chuyển sang bước tiếp
+}
+
+next() = chạy function tiếp theo.
+
+<------------>
+function.length trong JS = số tham số của function.
+<------------->
+
+Tóm tắt Day 5
+
+Những điểm cần nhớ:
+
+1️⃣ Middleware (req,res,next)
+2️⃣ Controller (req,res)
+3️⃣ Middleware phải gọi next()
+4️⃣ Handler phải await
+5️⃣ Không res.end() nhiều lần
+6️⃣ ...handlers cho phép nhiều middleware
+7️⃣ handler.length để phân biệt middleware
+8️⃣ Dynamic route :id
+9️⃣ Thứ tự middleware quan trọng

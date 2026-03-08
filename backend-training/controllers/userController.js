@@ -1,6 +1,9 @@
 import { getUsers, setUsers } from "../model/users.js";
 
-const users = getUsers();
+function getAllUsers(req, res) {
+  const users = getUsers();
+  res.end(JSON.stringify(users));
+}
 
 function parseBody(req) {
   return new Promise((resolve, reject) => {
@@ -19,6 +22,8 @@ function parseBody(req) {
 }
 
 async function getId(req, res) {
+  const users = getUsers();
+
   const id = Number(req.params.id);
   const user = users.find((u) => u.id === id);
 
@@ -32,18 +37,21 @@ async function getId(req, res) {
 
 async function postId(req, res) {
   const data = await parseBody(req);
+  const users = getUsers();
 
   const newId = users.length ? Math.max(...users.map((u) => u.id)) + 1 : 1;
 
   const newUser = { id: newId, name: data.name };
 
-  users.push(newUser);
+  //users.push(newUser);
+  setUsers([...users, newUser]);
 
   res.statusCode = 201;
   return res.end(JSON.stringify(newUser));
 }
 
 async function deleId(req, res) {
+  const users = getUsers();
   const id = Number(req.params.id);
   const user = users.find((u) => u.id === id);
 
@@ -57,4 +65,4 @@ async function deleId(req, res) {
   return res.end(JSON.stringify(user));
 }
 
-export { getId, postId, deleId };
+export { getId, postId, deleId, getAllUsers };

@@ -1,15 +1,19 @@
-import { getId, postId, deleId } from "../controllers/userController.js";
+import {
+  getId,
+  postId,
+  deleId,
+  getAllUsers,
+} from "../controllers/userController.js";
 import { addRoute } from "../middlewares/router.js";
-import { users } from "../model/users.js";
+
 const router = {
-  get: (path, handler) => addRoute("GET", path, handler),
-  post: (path, handler) => addRoute("POST", path, handler),
-  delete: (path, handler) => addRoute("DELETE", path, handler),
+  get: (path, ...handlers) => addRoute("GET", path, ...handlers),
+  post: (path, ...handlers) => addRoute("POST", path, ...handlers),
+  delete: (path, ...handlers) => addRoute("DELETE", path, ...handlers),
 };
 
-router.get("/users", (req, res) => {
-  res.end(JSON.stringify(users));
-});
+
+router.get("/users", getAllUsers);
 
 router.get("/users/:id", getId);
 

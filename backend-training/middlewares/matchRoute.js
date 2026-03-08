@@ -24,7 +24,7 @@ export default function matchRoute(method, pathname) {
     }
 
     if (isMatch) {
-      return { handler: route.handler, params };
+      return { handlers: route.handlers, params };
     }
   }
 

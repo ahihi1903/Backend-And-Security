@@ -13,7 +13,24 @@ const server = http.createServer(async (req, res) => {
   if (matched) {
     req.params = matched.params;
     try {
-      await matched.handler(req, res);
+      const handlers = matched.handlers;//mảng các function của route.
+      let index = 0;
+
+      async function next() {
+        const handler = handlers[index++];
+        if (!handler) return;
+
+        if (handler.length === 3) {
+          //function.length trong JS = số tham số của function.
+          // middleware (req,res,next)=> số tham số của function = 3 (req,res,next).
+          await handler(req, res, next);
+        } else {
+          // controller (req,res)
+          await handler(req, res);
+        }
+      }
+
+      await next();
     } catch (err) {
       console.error(err);
       res.statusCode = 500;
