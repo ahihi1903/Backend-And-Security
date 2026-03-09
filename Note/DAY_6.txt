@@ -1,0 +1,9 @@
+DAY_6:
+	1️⃣ Parse request body
+	2️⃣ Thêm helper res.json()
+	3️⃣ Tách global middleware
+	4️⃣ Xử lý query params
+<--------------------->
+-Chuyển parseBody() vào server.js để mỗi lần khi dùng parseBody không phải gọi lại nhiều lần
+-Tránh lặp function parseBody() nhiều lần
+-Giữ controller đơn giản chỉ sử lý logic

@@ -5,22 +5,6 @@ function getAllUsers(req, res) {
   res.end(JSON.stringify(users));
 }
 
-function parseBody(req) {
-  return new Promise((resolve, reject) => {
-    let body = "";
-
-    req.on("data", (chunk) => (body += chunk));
-    req.on("end", () => {
-      try {
-        resolve(JSON.parse(body));
-      } catch (err) {
-        reject(new Error("Invalid JSON"));
-      }
-    });
-    req.on("error", reject);
-  });
-}
-
 async function getId(req, res) {
   const users = getUsers();
 
@@ -36,7 +20,7 @@ async function getId(req, res) {
 }
 
 async function postId(req, res) {
-  const data = await parseBody(req);
+  const data = req.body;
   const users = getUsers();
 
   const newId = users.length ? Math.max(...users.map((u) => u.id)) + 1 : 1;

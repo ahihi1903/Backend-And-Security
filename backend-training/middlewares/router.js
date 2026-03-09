@@ -1,4 +1,3 @@
-
 const routes = [];
 
 function addRoute(method, path, ...handlers) {

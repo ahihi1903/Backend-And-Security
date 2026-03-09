@@ -2,9 +2,28 @@ import http from "http";
 import "./routes/userRoutes.js";
 import matchRoute from "./middlewares/matchRoute.js";
 
+function parseBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+
+    req.on("data", (chunk) => (body += chunk));
+    req.on("end", () => {
+      try {
+        resolve(JSON.parse(body));
+      } catch (err) {
+        reject(new Error("Invalid JSON"));
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
 const server = http.createServer(async (req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
   const pathname = parsedUrl.pathname;
+  const body = await parseBody(req);
+
+  req.body = body;
 
   res.setHeader("Content-Type", "application/json");
 
@@ -13,7 +32,7 @@ const server = http.createServer(async (req, res) => {
   if (matched) {
     req.params = matched.params;
     try {
-      const handlers = matched.handlers;//mảng các function của route.
+      const handlers = matched.handlers; //mảng các function của route.
       let index = 0;
 
       async function next() {

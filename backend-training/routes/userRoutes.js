@@ -12,7 +12,6 @@ const router = {
   delete: (path, ...handlers) => addRoute("DELETE", path, ...handlers),
 };
 
-
 router.get("/users", getAllUsers);
 
 router.get("/users/:id", getId);
