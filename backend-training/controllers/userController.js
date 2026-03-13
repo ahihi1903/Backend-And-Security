@@ -2,7 +2,15 @@ import { getUsers, setUsers } from "../model/users.js";
 
 function getAllUsers(req, res) {
   const users = getUsers();
-  res.end(JSON.stringify(users));
+
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || users.length;
+
+  const start = (page - 1) * limit;
+  const end = start + limit;
+
+  const result = users.slice(start, end);
+  res.end(JSON.stringify(result));
 }
 
 async function getId(req, res) {

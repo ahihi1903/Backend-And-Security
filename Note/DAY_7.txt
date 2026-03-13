@@ -1,0 +1,15 @@
+DAY 7__Query Params + cải thiện Router / Controller logic.
+
+Giả sử client gọi API: GET /users?page=1&limit=5
+Trong URL này có: users?page=1&limit=5 (đây gọi là Query Parameters.)
+<---->
+Day 7 chỉ có 1 mục tiêu duy nhất:
+
+👉 Thêm Query Parameters vào server của bạn.
+
+Tức là server hiểu được URL kiểu này: GET /users?page=1&limit=2
+
+req ban đầu:
+req.method = "GET"
+req.url = "/users?page=2&limit=2"
+req.headers.host = "localhost:3000"

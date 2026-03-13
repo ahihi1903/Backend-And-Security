@@ -19,8 +19,13 @@ function parseBody(req) {
 }
 
 const server = http.createServer(async (req, res) => {
+  //ghi thành URL đầy đủ vd: http://localhost:3000/users?page=2&limit=2
   const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+  //lấy ra pathname: /users
   const pathname = parsedUrl.pathname;
+  //lấy ra search (nếu có): ?page=2&limit=2
+  req.query = Object.fromEntries(parsedUrl.searchParams);
+  //body ko nhận req là GET
   const body = await parseBody(req);
 
   req.body = body;
