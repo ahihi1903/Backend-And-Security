@@ -30,7 +30,17 @@ const server = http.createServer(async (req, res) => {
 
   req.body = body;
 
-  res.setHeader("Content-Type", "application/json");
+  res.status = function (code) {
+    res.statusCode = code;
+    return res;
+  };
+
+  res.json = function (data) {
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify(data));
+  };
+
+  // res.setHeader("Content-Type", "application/json");
 
   const matched = matchRoute(req.method, pathname);
 
@@ -57,15 +67,17 @@ const server = http.createServer(async (req, res) => {
       await next();
     } catch (err) {
       console.error(err);
-      res.statusCode = 500;
-      return res.end(JSON.stringify({ message: err.message }));
+      //res.statusCode = 500;
+      //return res.end(JSON.stringify({ message: err.message }));
+      return res.status(500).json({ message: err.message });
     }
 
     return;
   }
 
-  res.statusCode = 404;
-  return res.end(JSON.stringify({ message: "Route not found" }));
+  //res.statusCode = 404;
+  //return res.end(JSON.stringify({ message: "Route not found" }));
+  return res.status(404).json({ message: "Route not found" });
 });
 
 server.listen(3000, () => {

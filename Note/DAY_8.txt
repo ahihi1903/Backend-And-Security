@@ -1,0 +1,14 @@
+DAY 8: Tạo helper cho response
+
+Trong server thêm đoạn:
+res.status = function (code) {
+  res.statusCode = code;
+  return res;
+};
+
+res.json = function (data) {
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(data));
+};
+
+==> return res.status(…).json(…);

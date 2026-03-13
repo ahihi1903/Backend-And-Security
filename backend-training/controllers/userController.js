@@ -10,7 +10,8 @@ function getAllUsers(req, res) {
   const end = start + limit;
 
   const result = users.slice(start, end);
-  res.end(JSON.stringify(result));
+  //res.end(JSON.stringify(result));
+  res.json(result);
 }
 
 async function getId(req, res) {
@@ -20,11 +21,13 @@ async function getId(req, res) {
   const user = users.find((u) => u.id === id);
 
   if (!user) {
-    res.statusCode = 404;
-    return res.end(JSON.stringify({ message: "User not found" }));
+    //res.statusCode = 404;
+    //return res.end(JSON.stringify({ message: "User not found" }));
+    return res.status(404).json({ message: "User not found" });
   }
 
-  return res.end(JSON.stringify(user));
+  //return res.end(JSON.stringify(user));
+  return res.json(user);
 }
 
 async function postId(req, res) {
@@ -38,8 +41,9 @@ async function postId(req, res) {
   //users.push(newUser);
   setUsers([...users, newUser]);
 
-  res.statusCode = 201;
-  return res.end(JSON.stringify(newUser));
+  //res.statusCode = 201;
+  //return res.end(JSON.stringify(newUser));
+  return res.status(201).json(newUser);
 }
 
 async function deleId(req, res) {
@@ -48,13 +52,15 @@ async function deleId(req, res) {
   const user = users.find((u) => u.id === id);
 
   if (!user) {
-    res.statusCode = 404;
-    return res.end(JSON.stringify({ message: "User not found" }));
+    //res.statusCode = 404;
+    //return res.end(JSON.stringify({ message: "User not found" }));
+    return res.status(404).json({ message: "User not found" });
   }
 
   // users = users.filter((u) => u.id !== id);
   setUsers(users.filter((u) => u.id !== id));
-  return res.end(JSON.stringify(user));
+  //return res.end(JSON.stringify(user));
+  return res.json(user);
 }
 
 export { getId, postId, deleId, getAllUsers };
