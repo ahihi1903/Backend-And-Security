@@ -1,0 +1,33 @@
+DAY-10: Global Error Handling (xử lý lỗi toàn server)
+
+Error có 2 loại:
+	1️⃣ Lỗi do client
+
+		Ví dụ:
+			invalid input
+			user not found
+
+		Status:	
+			400
+			404
+	2️⃣ Lỗi server
+
+		Ví dụ:
+			database error
+			unexpected bug
+
+		Status:
+
+			500
+
+<------------------------------->
+Flow error mới
+controller
+   ↓
+throw error
+   ↓
+catch ở server
+   ↓
+trả response JSON
+
+<--------------------------->

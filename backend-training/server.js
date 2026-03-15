@@ -69,7 +69,10 @@ const server = http.createServer(async (req, res) => {
       console.error(err);
       //res.statusCode = 500;
       //return res.end(JSON.stringify({ message: err.message }));
-      return res.status(500).json({ message: err.message });
+      console.error(err);
+      return res
+        .status(err.status || 500)
+        .json({ message: err.message || "Internal Server Error" });
     }
 
     return;
