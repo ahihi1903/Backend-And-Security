@@ -32,6 +32,17 @@ async function getId(req, res) {
 
 async function postId(req, res) {
   const data = req.body;
+
+  if (!data.name) {
+    return res.status(400).json({ message: "Name is required" });
+  }
+  if (typeof data.name !== "string") {
+    return res.status(400).json({ message: "Name must be string" });
+  }
+  if (data.name.length < 2) {
+    return res.status(400).json({ message: "Name too short" });
+  }
+
   const users = getUsers();
 
   const newId = users.length ? Math.max(...users.map((u) => u.id)) + 1 : 1;
@@ -49,6 +60,14 @@ async function postId(req, res) {
 async function deleId(req, res) {
   const users = getUsers();
   const id = Number(req.params.id);
+
+  if (typeof id !== "Number") {
+    return res.status(400).json({ message: "Id must be number" });
+  }
+  if (id <= 0) {
+    return res.status(400).json({ message: "ID must be greater than zero!" });
+  }
+
   const user = users.find((u) => u.id === id);
 
   if (!user) {

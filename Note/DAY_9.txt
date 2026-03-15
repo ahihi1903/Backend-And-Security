@@ -1,0 +1,31 @@
+DAY-9: bắt đầu phần backend security cơ bản:
+
+<----------Input Validation (kiểm tra dữ liệu từ client)---------->
+
+
+client có thể gửi những req gây lỗi bảo mật như:
+{
+ "name": 123 
+},
+{
+ "abc": "hack"
+},
+{}
+
+thì server vẫn tạo user như thường --> lỗi bảo mật!
+<--------------------------------------->
+
+Validation là gì:
+Validation = kiểm tra:
+
+Kiểm tra                      Ví dụ
+--------------------------------------------------
+field tồn tại		      name phải có
+kiểu dữ liệu		      name phải là string
+độ dài			      name > 2 ký tự
+dữ liệu hợp lệ		      không null
+
+<------------------------------------------------>
+
+
+
