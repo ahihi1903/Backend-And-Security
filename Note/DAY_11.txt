@@ -1,0 +1,33 @@
+DAY-11: Global Middleware System
+
+Middleware là: function chạy trước Controller
+<---------------------------------------->
+   Flow:
+
+	client request
+  	    ↓
+	middleware
+   	    ↓
+	controller
+   	    ↓
+	response
+
+<--------------------------------------------->
+Global middleware là Middleware chạy cho mọi request.
+
+Flow server sau Day 11
+client
+   ↓
+HTTP server
+   ↓
+global middleware
+   ↓
+router
+   ↓
+route middleware
+   ↓
+controller
+   ↓
+response
+
+<----------------------------------->

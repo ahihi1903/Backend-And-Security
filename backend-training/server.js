@@ -1,6 +1,30 @@
 import http from "http";
 import "./routes/userRoutes.js";
 import matchRoute from "./middlewares/matchRoute.js";
+import logger from "./middlewares/logger.js";
+
+const middlewares = [];
+
+use(logger);
+
+function use(middleware) {
+  middlewares.push(middleware);
+}
+
+async function runMiddlewares(req, res) {
+  let index = 0;
+
+  async function next(err) {
+    if (err) throw err;
+
+    const middleware = middlewares[index++];
+    if (!middleware) return;
+
+    await middleware(req, res, next);
+  }
+
+  await next();
+}
 
 function parseBody(req) {
   return new Promise((resolve, reject) => {
@@ -19,6 +43,8 @@ function parseBody(req) {
 }
 
 const server = http.createServer(async (req, res) => {
+  await runMiddlewares(req, res);
+
   //ghi thành URL đầy đủ vd: http://localhost:3000/users?page=2&limit=2
   const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
   //lấy ra pathname: /users
@@ -27,7 +53,6 @@ const server = http.createServer(async (req, res) => {
   req.query = Object.fromEntries(parsedUrl.searchParams);
   //body ko nhận req là GET
   const body = await parseBody(req);
-
   req.body = body;
 
   res.status = function (code) {
