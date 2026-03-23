@@ -1,4 +1,4 @@
-import { routes } from "./router.js";
+import { routes, routeMiddlewares } from "./router.js";
 
 export default function matchRoute(method, pathname) {
   const urlParts = pathname.split("/").filter(Boolean);
@@ -24,7 +24,27 @@ export default function matchRoute(method, pathname) {
     }
 
     if (isMatch) {
-      return { handlers: route.handlers, params };
+      // collect route-level middlewares whose path matches the request (prefix match)
+      const mwHandlers = [];
+      for (let rmw of routeMiddlewares) {
+        const rmwParts = rmw.path.split("/").filter(Boolean);
+        if (rmwParts.length > routeParts.length) continue; // middleware path longer than route path -> skip
+
+        let mwMatch = true;
+        for (let i = 0; i < rmwParts.length; i++) {
+          if (rmwParts[i].startsWith(":")) continue;
+          if (rmwParts[i] !== routeParts[i]) {
+            mwMatch = false;
+            break;
+          }
+        }
+
+        if (mwMatch) {
+          mwHandlers.push(...rmw.handlers);
+        }
+      }
+
+      return { handlers: [...mwHandlers, ...route.handlers], params };
     }
   }
 

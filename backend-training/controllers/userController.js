@@ -1,4 +1,6 @@
 import { getUsers, setUsers } from "../model/users.js";
+import createError from "../middlewares/createError.js";
+import validateUser from "../globalMiddlewares/validateUser.js";
 
 function getAllUsers(req, res) {
   const users = getUsers();
@@ -14,11 +16,11 @@ function getAllUsers(req, res) {
   res.json(result);
 }
 
-function createError(status, message) {
-  const err = new Error(message);
-  err.status = status;
-  return err;
-}
+// function createError(status, message) {
+//   const err = new Error(message);
+//   err.status = status;
+//   return err;
+// }
 
 async function getId(req, res) {
   const users = getUsers();
@@ -43,18 +45,20 @@ async function getId(req, res) {
 async function postId(req, res) {
   const data = req.body;
 
-  if (!data.name) {
-    //return res.status(400).json({ message: "Name is required" });
-    throw createError(400, "Name is required");
-  }
-  if (typeof data.name !== "string") {
-    //return res.status(400).json({ message: "Name must be string" });
-    throw createError(404, "Name must be string");
-  }
-  if (data.name.length < 2) {
-    //return res.status(400).json({ message: "Name too short" });
-    throw createError(404, "Name too short");
-  }
+  // if (!data.name) {
+  //   //return res.status(400).json({ message: "Name is required" });
+  //   throw createError(400, "Name is required");
+  // }
+  // if (typeof data.name !== "string") {
+  //   //return res.status(400).json({ message: "Name must be string" });
+  //   throw createError(404, "Name must be string");
+  // }
+  // if (data.name.length < 2) {
+  //   //return res.status(400).json({ message: "Name too short" });
+  //   throw createError(404, "Name too short");
+  // }
+
+  //await validateUser();
 
   const users = getUsers();
 
@@ -70,6 +74,7 @@ async function postId(req, res) {
 
 async function deleId(req, res) {
   const users = getUsers();
+
   const id = Number(req.params.id);
 
   if (Number.isNaN(id)) {
