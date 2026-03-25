@@ -32,6 +32,10 @@ function parseBody(req) {
 
     req.on("data", (chunk) => (body += chunk));
     req.on("end", () => {
+      if (!body) {
+        resolve(null); // hoặc {}
+        return;
+      }
       try {
         resolve(JSON.parse(body));
       } catch (err) {
@@ -75,25 +79,31 @@ const server = http.createServer(async (req, res) => {
       const handlers = matched.handlers; //mảng các function của route.
       let index = 0;
 
-      async function next() {
+      async function next(err) {
+        if (err) {
+          return res
+            .status(err.status || 500)
+            .json({ message: err.message || "Internal Server Error" });
+        }
+
         const handler = handlers[index++];
         if (!handler) return;
-
-        if (handler.length === 3) {
-          //function.length trong JS = số tham số của function.
-          // middleware (req,res,next)=> số tham số của function = 3 (req,res,next).
-          await handler(req, res, next);
-        } else {
-          // controller (req,res)
-          await handler(req, res);
+        try {
+          if (handler.length === 3) {
+            //function.length trong JS = số tham số của function.
+            // middleware (req,res,next)=> số tham số của function = 3 (req,res,next).
+            await handler(req, res, next);
+          } else {
+            // controller (req,res)
+            await handler(req, res);
+          }
+        } catch (error) {
+          await next(error);
         }
       }
 
       await next();
     } catch (err) {
-      console.error(err);
-      //res.statusCode = 500;
-      //return res.end(JSON.stringify({ message: err.message }));
       console.error(err);
       return res
         .status(err.status || 500)

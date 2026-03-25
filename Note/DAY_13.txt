@@ -1,0 +1,39 @@
+DAY-13:🎯 Chủ đề: Service Layer (tách logic khỏi controller)
+
+request
+ ↓
+controller (mỏng)
+ ↓
+service (logic chính)
+ ↓
+model (data)
+
+controller → service → model
+
+controller = nhận req, trả res
+service = xử lý logic
+model = lưu data
+
+<-------------->
+userRoutes
+    ↓
+globalMiddlewares
+    ↓
+controller
+    ↓
+services
+    ↓
+  model
+    ↓
+services res
+    ↓
+controller
+<-------->
+-Lỗi thêm user mới mà dele rồi mà vẫn gọi được vì ở phần service delete khi gửi req thì id gửi là dạng String nên phải đưa về Number(id)
+<----->
+muốn sử dụng router.use("/users", auth); thì ở phần headers trong postman ghi: key:Authorization value:Bearer 123
+<------------------->
+
+
+
+
