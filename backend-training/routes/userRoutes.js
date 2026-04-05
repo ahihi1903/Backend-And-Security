@@ -5,10 +5,11 @@ import {
   getAllUsers,
 } from "../controllers/userController.js";
 import { addRoute, addRouteMiddleware } from "../middlewares/router.js";
-import auth from "../globalMiddlewares/auth.js";
+//import auth from "../globalMiddlewares/auth.js";
 import validateUser from "../globalMiddlewares/validateUser.js";
 import checkIdUser from "../globalMiddlewares/checkID.js";
 import asyncHandler from "../middlewares/asyncHandler.js";
+import auth from "../middlewares/auth.js";
 
 const router = {
   get: (path, ...handlers) => addRoute("GET", path, ...handlers),
@@ -20,7 +21,7 @@ const router = {
 // apply auth middleware to all /users routes
 //router.use("/users", auth);
 
-router.get("/users", asyncHandler(getAllUsers));
+router.get("/users", auth, asyncHandler(getAllUsers));
 
 router.get("/users/:id", checkIdUser, asyncHandler(getId));
 

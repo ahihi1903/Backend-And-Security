@@ -1,10 +1,10 @@
 import http from "http";
 import "./routes/userRoutes.js";
+import "./routes/authRoutes.js";
 import matchRoute from "./middlewares/matchRoute.js";
 import logger from "./middlewares/logger.js";
 import createError from "./middlewares/createError.js";
 import errorHandler from "./middlewares/errorHandler.js";
-
 
 const middlewares = [];
 
@@ -88,7 +88,7 @@ const server = http.createServer(async (req, res) => {
           //   .status(err.status || 500)
           //   .json({ message: err.message || "Internal Server Error" });
           //throw createError(err.status, err.message);
-          return errorHandler(err,req,res);
+          return errorHandler(err, req, res);
         }
 
         const handler = handlers[index++];
@@ -115,7 +115,7 @@ const server = http.createServer(async (req, res) => {
       //   .status(err.status || 500)
       //   .json({ message: err.message || "Internal Server Error" });
 
-      return errorHandler(err,req,res);
+      return errorHandler(err, req, res);
     }
 
     return;

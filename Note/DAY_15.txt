@@ -1,0 +1,48 @@
+DAY-15:Authentication (đăng nhập + token + bảo vệ API)
+✔ Login system
+✔ Token (giống JWT)
+✔ Middleware bảo vệ route
+✔ Hiểu cách auth hoạt động thật
+
+-Tư duy: Client login → Server tạo token → Client gửi token mỗi request
+
+-Flow:
+POST /login
+ ↓
+server check user
+ ↓
+tạo token
+ ↓
+trả về client
+ ↓
+client gọi API khác kèm token
+ ↓
+middleware check token
+ ↓
+cho vào controller
+
+<-------------------------------->
+test postmen
+- POST/login
+-JSON:
+    {
+	"username":"admin",
+	"password":"123456"
+    }
+-RES: "token":"abcxyz..."
+-Gọi API: 
+	GET / users
+	vào phần Headers chọn key: authorization
+			      value: Bearer abcxyz...
+hành động này là cho server kiểm tra thẻ token để xác nhận quyền truy cập
+
+login → nhận token
+ ↓
+gọi API khác
+ ↓
+gửi kèm Authorization header
+ ↓
+auth middleware check
+ ↓
+OK → vào controller
+<------------------------------>
