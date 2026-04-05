@@ -2,6 +2,9 @@ import http from "http";
 import "./routes/userRoutes.js";
 import matchRoute from "./middlewares/matchRoute.js";
 import logger from "./middlewares/logger.js";
+import createError from "./middlewares/createError.js";
+import errorHandler from "./middlewares/errorHandler.js";
+
 
 const middlewares = [];
 
@@ -81,9 +84,11 @@ const server = http.createServer(async (req, res) => {
 
       async function next(err) {
         if (err) {
-          return res
-            .status(err.status || 500)
-            .json({ message: err.message || "Internal Server Error" });
+          // return res
+          //   .status(err.status || 500)
+          //   .json({ message: err.message || "Internal Server Error" });
+          //throw createError(err.status, err.message);
+          return errorHandler(err,req,res);
         }
 
         const handler = handlers[index++];
@@ -96,6 +101,7 @@ const server = http.createServer(async (req, res) => {
           } else {
             // controller (req,res)
             await handler(req, res);
+            await next(); //chạy tiếp middleware
           }
         } catch (error) {
           await next(error);
@@ -105,9 +111,11 @@ const server = http.createServer(async (req, res) => {
       await next();
     } catch (err) {
       console.error(err);
-      return res
-        .status(err.status || 500)
-        .json({ message: err.message || "Internal Server Error" });
+      // return res
+      //   .status(err.status || 500)
+      //   .json({ message: err.message || "Internal Server Error" });
+
+      return errorHandler(err,req,res);
     }
 
     return;

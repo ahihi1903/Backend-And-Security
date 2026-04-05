@@ -52,4 +52,4 @@ async function deleteUserId(id) {
   return user;
 }
 
-export { createUser, getAll, getUserId, deleteUserId };
+export { getAll, getUserId, createUser, deleteUserId };

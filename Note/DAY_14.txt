@@ -1,0 +1,28 @@
+DAY-14: 🎯 Chủ đề: Error Flow + Async Wrapper (PRO LEVEL)
+
+✔ Không cần try/catch trong controller
+✔ Tự động bắt lỗi async
+✔ Code giống Express thật
+
+
+-Viết hàm middlewares/asyncHandler.js:
++gán vào trong userRoute-->không phải viết try/catch trong controller
+
+request
+ ↓
+route
+ ↓
+asyncHandler
+ ↓
+controller
+ ↓
+service (throw error)
+ ↓
+asyncHandler catch
+ ↓
+next(err)
+ ↓
+errorHandler
+ ↓
+response
+
