@@ -1,0 +1,34 @@
+<<Củng cố nền tảng>>
+
+-matchRoute:
+ +Nhiệm vụ chính: Tìm route phù hợp với request (method + URL), đồng thời lấy params và middleware cần chạy
++Nói đơn giản:
+ Người dùng gửi request:
+	GET /users/123
+ Function này sẽ:
+	Tìm route /users/:id
+	Lấy id = 123
+	Gom middleware liên quan
+	Trả về danh sách handler để xử lý request
++Input:
+	Method: "GET", "POST", "PUT", "DELETE"
+	PathName: "/users/123"
++Output:
+        Nếu tìm thấy route:
+		{
+ 			 handlers: [middleware1, middleware2, handler],
+  			 params: { id: "123" }
+		}
+//param: thống số; handler: người xử lý; middleware: phần mềm trung gian
+
++Mỗi route có dạng:
+{
+  method: "GET",
+  path: "/users/:id",
+  handlers: [...]
+}
+
+
+-router.js: cải tiến lại
+
+-user.js:  cải tiến lại
