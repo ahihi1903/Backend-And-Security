@@ -26,3 +26,122 @@ errorHandler
  ↓
 response
 
+<------------------------>
+
+Câu trả lời ngắn gọn
+next KHÔNG cần import
+→ vì nó là function bạn TỰ truyền vào
+🧠 1️⃣ Bản chất của next
+
+Trong server bạn có:
+
+async function next(err) {
+  if (err) {
+    return errorHandler(err, req, res);
+  }
+
+  const handler = handlers[index++];
+  ...
+}
+
+👉 Đây là function do bạn tự viết
+
+🔥 2️⃣ asyncHandler nhận next từ đâu?
+export default function asyncHandler(fn) {
+  return async (req, res, next) => {
+    try {
+      await fn(req, res, next);
+    } catch (err) {
+      next(err); // 👈 dùng next từ tham số
+    }
+  };
+}
+
+👉 next ở đây không phải import
+
+👉 nó đến từ:
+
+server truyền vào khi gọi handler
+🔄 3️⃣ Flow thật sự
+Trong server:
+await handler(req, res, next);
+
+👉 bạn truyền next vào đây
+
+Handler là gì?
+handler = asyncHandler(postId)
+Khi chạy:
+asyncHandler(postId)(req, res, next)
+
+👉 tức là:
+
+(req, res, next) được truyền vào asyncHandler
+💥 4️⃣ Nên next(err) chạy như nào?
+asyncHandler
+ ↓
+catch(err)
+ ↓
+next(err)
+ ↓
+server.next(err)
+ ↓
+errorHandler
+🧠 5️⃣ Đây là gì trong JS?
+
+👉 Đây là:
+
+Function parameter passing
+Ví dụ đơn giản
+function A(fn) {
+  fn("hello");
+}
+
+function B(msg) {
+  console.log(msg);
+}
+
+A(B); // 👉 B được truyền vào A
+Tương tự backend của bạn
+server → truyền next
+asyncHandler → nhận next
+→ gọi next(err)
+🔥 6️⃣ So sánh với Express
+
+Express.js làm y hệt:
+
+app.use((req, res, next) => {
+  next(err);
+});
+
+👉 next cũng do framework truyền vào
+
+⚠️ 7️⃣ Sai lầm nếu không hiểu
+
+Bạn sẽ nghĩ:
+
+next = global function ❌
+next = import ❌
+
+👉 nhưng thực tế:
+
+next = function được truyền qua các layer
+🧠 8️⃣ Insight quan trọng
+Middleware system = truyền next từ function này sang function khác
+📊 9️⃣ Flow cực rõ
+server gọi handler(req,res,next)
+ ↓
+asyncHandler nhận next
+ ↓
+controller throw error
+ ↓
+asyncHandler catch
+ ↓
+next(err)
+ ↓
+server.next(err)
+ ↓
+errorHandler
+✅ 10️⃣ Kết luận
+❌ next không cần import
+✔ vì nó được server truyền vào
+✔ asyncHandler chỉ sử dụng lại

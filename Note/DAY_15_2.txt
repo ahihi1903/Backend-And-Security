@@ -1,0 +1,375 @@
+file server.js:
+<--------------------->
+🧠 1. Tổng quan: file này làm gì?
+
+Đây là core server của bạn. Khi có request tới:
+
+👉 Nó sẽ chạy theo pipeline:
+
+Request
+ ↓
+Global middleware (logger)
+ ↓
+Parse URL + query
+ ↓
+Parse body
+ ↓
+Match route
+ ↓
+Route middleware
+ ↓
+Controller
+ ↓
+Response
+🧪 2. Ví dụ thực tế
+
+Giả sử bạn có:
+
+📌 Route
+addRoute("POST", "/users", authMiddleware, createUser);
+📌 Request:
+POST /users?page=1
+Body: { "name": "Nam" }
+🚀 3. Luồng chạy chi tiết từng dòng
+🪜 Bước 1: request đi vào server
+http.createServer(async (req, res) => { ... })
+
+👉 Node nhận request và chạy function này
+
+🪜 Bước 2: chạy global middleware
+await runMiddlewares(req, res);
+👉 Bên trong:
+middlewares = [logger]
+👉 Chạy:
+logger(req, res, next)
+
+Ví dụ logger:
+
+(req, res, next) => {
+  console.log(req.method, req.url);
+  next();
+}
+
+👉 Output:
+
+POST /users?page=1
+🪜 Bước 3: parse URL
+const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+👉 Kết quả:
+pathname = "/users"
+req.query = { page: "1" }
+🪜 Bước 4: parse body
+const body = await parseBody(req);
+req.body = body;
+👉 Bên trong parseBody:
+req.on("data", chunk => body += chunk)
+
+→ nhận dữ liệu
+
+req.on("end", ...)
+
+→ parse JSON
+
+👉 Kết quả:
+req.body = { name: "Nam" }
+🪜 Bước 5: thêm helper cho response
+res.status(200).json(...)
+
+👉 giống Express
+
+🪜 Bước 6: match route
+const matched = matchRoute(req.method, pathname);
+👉 Giả sử match được:
+{
+  handlers: [authMiddleware, createUser],
+  params: {}
+}
+🪜 Bước 7: gán params
+req.params = matched.params;
+🔥 4. PHẦN QUAN TRỌNG NHẤT: chạy handlers
+🧠 Code:
+let index = 0;
+
+async function next(err)
+
+👉 Đây là engine middleware giống Express
+
+🧪 5. Chạy thực tế từng handler
+▶️ Lần 1: gọi next()
+handler = authMiddleware
+authMiddleware:
+(req, res, next) => {
+  console.log("auth");
+  next();
+}
+
+👉 Output:
+
+auth
+▶️ Lần 2:
+handler = createUser
+controller:
+(req, res) => {
+  res.json({ user: req.body.name });
+}
+
+👉 Output response:
+
+{ "user": "Nam" }
+
+👉 Sau đó:
+
+await next();
+
+→ không còn handler → kết thúc
+
+⚠️ 6. Nếu có lỗi xảy ra
+Ví dụ:
+authMiddleware = (req, res, next) => {
+  return next(new Error("Unauthorized"));
+}
+👉 Flow:
+next(err)
+→ errorHandler(err, req, res)
+Ví dụ errorHandler:
+res.status(500).json({
+  message: err.message
+});
+
+👉 Response:
+
+{ "message": "Unauthorized" }
+❌ 7. Nếu route không tồn tại
+const matched = null;
+
+👉 chạy:
+
+return res.status(404).json({ message: "Route not found" });
+🧠 8. Tổng hợp flow (cực dễ nhớ)
+📌 Case thành công
+POST /users?page=1
+
+↓
+logger
+↓
+parse query
+↓
+parse body
+↓
+match route
+↓
+authMiddleware
+↓
+createUser
+↓
+response
+📌 Case lỗi
+POST /users
+
+↓
+logger
+↓
+match route
+↓
+authMiddleware → ERROR
+↓
+errorHandler
+↓
+response lỗi
+💎 9. Insight quan trọng (cái này giúp bạn lên level)
+🔥 1. next() = điều khiển flow
+next()
+
+→ chạy tiếp
+
+next(err)
+
+→ nhảy sang errorHandler
+
+🔥 2. middleware = function bình thường
+(req, res, next)
+🔥 3. controller = middleware đặc biệt
+(req, res)
+🔥 4. handlers = pipeline
+[auth, validate, controller]
+<----------------------------->
+
+function parseBody:
+----------------------
+Nhiệm vụ:
+🔥 Đọc dữ liệu body từ request (POST, PUT...) và chuyển thành object JS
+------
+Ví dụ request:
+POST /users
+Content-Type: application/json
+
+{
+  "name": "Nam"
+}
+--------------
+👉 parseBody sẽ biến:
+
+"{ "name": "Nam" }"
+
+➡️ thành:
+
+{ name: "Nam" }
+--------------
+⚠️ 2. Tại sao phải viết hàm này?
+
+Trong Node thuần (http):
+
+👉 req.body KHÔNG tồn tại sẵn ❌
+
+👉 Vì request gửi lên là stream dữ liệu
+
+💡 3. Request trong Node là gì?
+
+👉 req là một Readable Stream
+
+Nghĩa là:
+
+Data KHÔNG đến 1 lần
+→ mà đến từng CHUNK (từng mảnh)
+🧪 4. Ví dụ thực tế
+
+Client gửi:
+
+{ "name": "Nam" }
+
+👉 Server nhận kiểu:
+
+chunk 1: "{ "na"
+chunk 2: "me": "
+chunk 3: "Nam" }"
+
+👉 Bạn phải ghép lại
+
+🔍 5. Giải thích từng dòng code
+🪜 Bước 1: trả về Promise
+return new Promise((resolve, reject) => {
+
+👉 vì đọc stream là bất đồng bộ (async)
+
+🪜 Bước 2: tạo biến chứa body
+let body = "";
+
+👉 dùng để ghép dữ liệu
+
+🪜 Bước 3: nhận dữ liệu từng phần
+req.on("data", (chunk) => (body += chunk));
+
+👉 mỗi lần có dữ liệu:
+
+body = body + chunk
+Ví dụ:
+body = ""
+→ "{ "na"
+→ "{ "name": "
+→ "{ "name": "Nam" }"
+🪜 Bước 4: khi nhận xong
+req.on("end", () => {
+
+👉 nghĩa là:
+
+✔️ đã nhận đủ dữ liệu
+
+🪜 Bước 5: nếu không có body
+if (!body) {
+  resolve(null);
+  return;
+}
+
+👉 ví dụ:
+
+GET /users
+
+→ không có body
+
+🪜 Bước 6: parse JSON
+resolve(JSON.parse(body));
+
+👉 chuyển:
+
+"{ "name": "Nam" }"
+
+➡️
+
+{ name: "Nam" }
+🪜 Bước 7: nếu JSON sai
+catch (err) {
+  reject(new Error("Invalid JSON"));
+}
+
+👉 ví dụ:
+
+{ name: Nam }
+
+→ lỗi JSON
+
+🪜 Bước 8: lỗi stream
+req.on("error", reject);
+
+👉 nếu có lỗi mạng / stream → reject
+
+🚀 6. Flow thực tế
+📌 Request:
+POST /users
+Body: { "name": "Nam" }
+🔄 Flow:
+req.on("data") → nhận chunk
+ ↓
+ghép body
+ ↓
+req.on("end")
+ ↓
+JSON.parse
+ ↓
+resolve(body)
+🎯 7. Kết quả cuối cùng
+const body = await parseBody(req);
+
+👉
+
+req.body = { name: "Nam" }
+⚠️ 8. Những lỗi thường gặp
+❌ 1. Quên JSON.parse
+resolve(body)
+
+👉 body vẫn là string ❌
+
+❌ 2. Không handle error
+
+→ server crash
+
+❌ 3. Không check Content-Type
+
+→ parse sai dữ liệu
+
+🔥 9. So với Express
+
+Trong Express.js:
+
+app.use(express.json());
+
+👉 chính là làm việc này bên trong
+
+💎 10. Tóm lại cực dễ nhớ
+
+👉 parseBody làm 4 việc:
+
+1. Nghe data (chunk)
+2. Ghép lại
+3. Đợi end
+4. Parse JSON
+🧠 11. Insight quan trọng
+
+👉 Node:
+
+Request = stream
+Body không có sẵn
+Bạn phải tự đọc
+<----------------------------->
+kiki
+------
+

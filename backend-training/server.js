@@ -40,7 +40,7 @@ function parseBody(req) {
         return;
       }
       try {
-        resolve(JSON.parse(body));
+        resolve(JSON.parse(body));//chuyển:"{ "name": "Nam" }"=> { name: "Nam" }
       } catch (err) {
         reject(new Error("Invalid JSON"));
       }
@@ -51,7 +51,7 @@ function parseBody(req) {
 
 const server = http.createServer(async (req, res) => {
   await runMiddlewares(req, res);
-
+//<---------------------------------->
   //ghi thành URL đầy đủ vd: http://localhost:3000/users?page=2&limit=2
   const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
   //lấy ra pathname: /users
@@ -71,7 +71,7 @@ const server = http.createServer(async (req, res) => {
     res.setHeader("Content-Type", "application/json");
     res.end(JSON.stringify(data));
   };
-
+//<------------------------------>
   // res.setHeader("Content-Type", "application/json");
 
   const matched = matchRoute(req.method, pathname);
@@ -108,7 +108,7 @@ const server = http.createServer(async (req, res) => {
         }
       }
 
-      await next();
+      await next(); //chạy lần đầu để gọi vào next(err)
     } catch (err) {
       console.error(err);
       // return res
