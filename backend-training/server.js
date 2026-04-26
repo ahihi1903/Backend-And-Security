@@ -5,6 +5,10 @@ import matchRoute from "./middlewares/matchRoute.js";
 import logger from "./middlewares/logger.js";
 import createError from "./middlewares/createError.js";
 import errorHandler from "./middlewares/errorHandler.js";
+// import dotenv from "dotenv";
+
+// dotenv.config();
+import "dotenv/config";
 
 const middlewares = [];
 
@@ -40,7 +44,7 @@ function parseBody(req) {
         return;
       }
       try {
-        resolve(JSON.parse(body));//chuyển:"{ "name": "Nam" }"=> { name: "Nam" }
+        resolve(JSON.parse(body)); //chuyển:"{ "name": "Nam" }"=> { name: "Nam" }
       } catch (err) {
         reject(new Error("Invalid JSON"));
       }
@@ -51,7 +55,7 @@ function parseBody(req) {
 
 const server = http.createServer(async (req, res) => {
   await runMiddlewares(req, res);
-//<---------------------------------->
+  //<---------------------------------->
   //ghi thành URL đầy đủ vd: http://localhost:3000/users?page=2&limit=2
   const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
   //lấy ra pathname: /users
@@ -71,7 +75,7 @@ const server = http.createServer(async (req, res) => {
     res.setHeader("Content-Type", "application/json");
     res.end(JSON.stringify(data));
   };
-//<------------------------------>
+  //<------------------------------>
   // res.setHeader("Content-Type", "application/json");
 
   const matched = matchRoute(req.method, pathname);
@@ -126,6 +130,7 @@ const server = http.createServer(async (req, res) => {
   return res.status(404).json({ message: "Route not found" });
 });
 
-server.listen(3000, () => {
-  console.log("Server running at http://localhost:3000");
+server.listen(process.env.PORT, () => {
+  console.log("Server running at http://localhost:", process.env.PORT);
+  console.log("SECRET =", process.env.JWT_SECRET);
 });

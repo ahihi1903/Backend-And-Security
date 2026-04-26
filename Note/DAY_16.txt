@@ -1,0 +1,139 @@
+🎯 1️⃣ Mục tiêu Day 16
+✔ Dùng JWT thật (có chữ ký)
+✔ Không lưu password dạng plain text
+✔ So sánh password an toàn
+✔ Token không bị giả mạo
+
+2️⃣ Vấn đề của Day 15
+❌ token = base64 → ai cũng decode/sửa được
+❌ password = "123456" → cực nguy hiểm
+
+👉 Day 16 sẽ fix toàn bộ
+
+
+3️⃣ JWT là gì?
+	JWT(JsonWebToken):header.payload.signature(tiêu đề.tải trọng.chữ ký)
+	vd:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+	vì có chữ ký signature nên ko thể fake
+
+JWT (JSON Web Token) là một chuỗi string dùng để:
+✔️ xác thực user (đã login chưa)
+✔️ truyền thông tin an toàn giữa client ↔ server
+
+5️⃣ Tạo JWT
+📁 utils/jwt.js
+
+🔐 6️⃣ Hash password
+📁 utils/hash.js
+
+7️⃣ Tạo user (signup)
+📁 controllers/authController.js
+
+🔑 8️⃣ Login (đúng chuẩn)
+
+🛡 9️⃣ Middleware auth (JWT)
+📁 middlewares/auth.js
+
+
+🔟 Flow mới (QUAN TRỌNG)
+REGISTER
+password → hash → lưu DB
+
+LOGIN
+password → compare hash
+ ↓
+tạo JWT
+
+REQUEST
+client gửi token
+ ↓
+server verify signature
+ ↓
+OK → cho vào controller
+<--------------------------------->
+?Tại sao login(Đăng nhập) lại sử dụng method(phương  pháp) là POST chứ không phải GET
+
+-Login dùng POST vì nó gửi dữ liệu nhạy cảm (username, password)
+
+-Nếu sử dụng GET thì login sẽ: GET /login?username=admin&password=123456
+-->
+✔ password lộ trên URL
+✔ lưu trong history trình duyệt
+✔ có thể bị log server
+✔ bị cache
+
+-POST an toàn hơn vì: 
+
++POST /login <http>
+
++Body:
+{
+  "username": "admin",
+  "password": "123456"
+}
+
++👉 Ưu điểm:
+✔ không hiện trên URL
+✔ không bị cache
+✔ đúng chuẩn REST
+
+-Chuẩn REST API
+GET    /users     → lấy dữ liệu
+POST   /login     → gửi dữ liệu đăng nhập
+POST   /register  → tạo user
+DELETE /users/:id → xóa
+
+-Tư duy đúng là:
+GET = đọc dữ liệu
+POST = gửi dữ liệu (đặc biệt là dữ liệu nhạy cảm)
+<-------------------------------------------->
+?Lưu hashCode hay Secret bằng .env (OK)
+<--------------------->
+TEST /register && /login:
+
+1️⃣ Bước 1 — Test Register
+Request
+POST http://localhost:3000/register
+Tab Body → raw → JSON
+{
+  "username": "admin",
+  "password": "123456"
+}
+Kết quả mong đợi
+{
+  "message": "User created"
+}
+🔍 Ý nghĩa
+password sẽ được bcrypt hash trước khi lưu
+2️⃣ Bước 2 — Test Login
+Request
+POST http://localhost:3000/login
+Body
+{
+  "username": "admin",
+  "password": "123456"
+}
+Kết quả mong đợi
+{
+  "token": "eyJhbGciOiJIUzI1NiIs..."
+}
+
+👉 Copy token này
+
+3️⃣ Bước 3 — Test route cần auth
+
+Ví dụ:
+
+GET http://localhost:3000/users
+Tab Headers
+Key	Value
+Authorization	Bearer TOKEN_CUA_BAN
+
+Ví dụ:
+
+Bearer eyJhbGciOiJIUzI1NiIs...
+Kết quả mong đợi
+[
+  { "id": 1, "name": "An" }
+]
+

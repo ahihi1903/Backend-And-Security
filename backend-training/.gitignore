@@ -1,0 +1,4 @@
+node_modules/
+backend-training/node_modules/
+.env
+backend-training/.env

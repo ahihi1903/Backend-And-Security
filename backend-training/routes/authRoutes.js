@@ -1,8 +1,11 @@
 import { addRoute } from "../middlewares/router.js";
-import { login } from "../controllers/authController.js";
+import { register, login } from "../controllers/authController.js";
+import asyncHandler from "../middlewares/asyncHandler.js";
 //router login
 const router = {
   post: (path, ...handlers) => addRoute("POST", path, ...handlers),
 };
 
-router.post("/login", login);
+router.post("/register", asyncHandler(register));
+
+router.post("/login", asyncHandler(login));

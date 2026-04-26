@@ -4,7 +4,7 @@ import {
   getUserId,
   deleteUserId,
 } from "../services/userServices.js";
-
+//CRUD user
 async function getAllUsers(req, res, next) {
   // try {
   //   const result = await getAll(req.query.page, req.query.limit);

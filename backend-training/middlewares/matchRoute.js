@@ -19,7 +19,7 @@ export default function matchRoute(method, pathname) {
     if (routeParts.length !== urlParts.length) continue;
 
     let params = {};
-    let isMatch = true;
+    let isMatch = true; 
     //b5: Match từng phần
     for (let i = 0; i < routeParts.length; i++) {
       if (routeParts[i].startsWith(":")) {
