@@ -1,0 +1,114 @@
+DAY-17:Access Token + Refresh Token
+
+1️⃣ Vấn đề của Day 16
+
+Bạn đang có:
+
+JWT expiresIn = 1h
+
+Sau 1 giờ:
+
+token hết hạn
+user phải login lại
+
+❌ Trải nghiệm không tốt.
+
+2️⃣ Giải pháp thực tế công ty dùng
+
+Dùng 2 token:
+
+1. Access Token  (ngắn hạn)
+2. Refresh Token (dài hạn)
+
+
+3️⃣ Hiểu cực dễ
+Token		Sống bao lâu	Dùng để
+Access Token	15 phút		gọi API
+Refresh Token	7 ngày		xin access token mới
+
+4️⃣ Flow chuẩn
+LOGIN
+ ↓
+server trả:
+- accessToken
+- refreshToken
+
+Client gọi API:
+Authorization: Bearer accessToken
+
+Hết hạn:
+POST /refresh
+
+Server cấp accessToken mới
+
+5️⃣ Tạo jwt.js mới
+📁 utils/jwt.js
+
+6️⃣ .env
+
+7️⃣ Login Controller
+📁 controllers/authController.js
+
+8️⃣ Route refresh
+
+9️⃣ Route logout
+
+🔟 Test Postman
+Login
+POST /login
+
+Response:
+
+{
+  "accessToken": "...",
+  "refreshToken": "..."
+}
+API
+GET /users
+Authorization: Bearer accessToken
+Refresh
+POST /refresh
+{
+  "refreshToken":"..."
+}
+
+11️⃣ Vì sao mạnh?
+Access token bị lộ → chỉ sống ngắn
+Refresh token giữ đăng nhập lâu
+
+12️⃣ Sai lầm newbie
+❌ token sống 30 ngày
+❌ không refresh token
+❌ hết hạn bắt login lại
+
+<------------------->
+🧪 TEST POSTMAN
+1️⃣ Login
+POST /login
+
+Body:
+{
+  "username":"admin",
+  "password":"123456"
+}
+Response:
+{
+  "accessToken":"...",
+  "refreshToken":"..."
+}
+
+2️⃣ Access hết hạn
+POST /refresh
+     Phải copy refreshToken ở phần /login dán vào body
+Body:
+{
+  "refreshToken":"..."
+}
+
+
+3️⃣ Logout
+POST /logout
+Body:
+{
+  "refreshToken":"..."
+}

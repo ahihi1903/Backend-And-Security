@@ -23,9 +23,9 @@ const router = {
 
 router.get("/users", auth, asyncHandler(getAllUsers));
 
-router.get("/users/:id", checkIdUser, asyncHandler(getId));
+router.get("/users/:id",auth, checkIdUser, asyncHandler(getId));
 
 // validateUser is route middleware applied only to POST /users
 router.post("/users", validateUser, asyncHandler(postId));
 
-router.delete("/users/:id", checkIdUser, asyncHandler(deleId));
+router.delete("/users/:id",auth, checkIdUser, asyncHandler(deleId));

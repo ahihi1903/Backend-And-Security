@@ -1,13 +1,50 @@
-import { hashPassword } from "../utils/hash.js";
-import { accounts } from "../model/auth.js";
-///
-import { comparePassword } from "../utils/hash.js";
-import { generateToken } from "../utils/jwt.js";
-import createError from "../middlewares/createError.js";
-import { loginService } from "../services/authServices.js";
-import { registerService } from "../services/authServices.js";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+} from "../utils/jwt.js";
+import {
+  loginService,
+  refreshService,
+  logoutService,
+  registerService,
+} from "../services/authServices.js";
 
-//login + register
+export const refreshTokens = [];
+
+export async function login(req, res) {
+  //hàm đăng nhập
+  const { username, password } = req.body;
+
+  const user = await loginService(username, password);
+
+  const accessToken = await generateAccessToken(user); //time ngắn hạn
+  const refreshToken = await generateRefreshToken(user); //time dài hạn
+
+  refreshTokens.push(refreshToken);
+
+  res.end(JSON.stringify({ accessToken, refreshToken }));
+}
+
+export async function refresh(req, res) {
+  const { refreshToken } = req.body;
+  const accessToken = await refreshService(refreshToken);
+  res.end(
+    JSON.stringify({
+      accessToken,
+    }),
+  );
+}
+
+export async function logout(req, res) {
+  const { refreshToken } = req.body;
+  await logoutService(refreshToken);
+  res.end(
+    JSON.stringify({
+      message: "Logged Out",
+    }),
+  );
+}
 
 export async function register(req, res) {
   //hàm đăng ký
@@ -17,12 +54,4 @@ export async function register(req, res) {
 
   res.statusCode = 201;
   res.end(JSON.stringify({ message: "User created" }));
-}
-
-export async function login(req, res) {
-  //hàm đăng nhập
-  const { username, password } = req.body;
-  const token = await loginService(username, password);
-
-  res.end(JSON.stringify({ token }));
 }

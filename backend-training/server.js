@@ -131,6 +131,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(process.env.PORT, () => {
-  console.log("Server running at http://localhost:", process.env.PORT);
-  console.log("SECRET =", process.env.JWT_SECRET);
+  console.log("Server running at http://localhost:",process.env.PORT);
+  //console.log("SECRET =", process.env.JWT_SECRET);
 });
