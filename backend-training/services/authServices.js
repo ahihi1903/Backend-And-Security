@@ -1,6 +1,5 @@
 import { hashPassword } from "../utils/hash.js";
 import { accounts } from "../model/auth.js";
-///
 import { comparePassword } from "../utils/hash.js";
 import {
   generateAccessToken,
@@ -27,25 +26,19 @@ export async function loginService(username, password) {
   return user; //chỉ trả user
 }
 
-export async function refreshService(refreshToken) {
-  if (!refreshTokens.includes(refreshToken)) {
-    res.statusCode = 401;
-    return res.end(
-      JSON.stringify({
-        message: "Invalid refresh token",
-      }),
-    );
+export async function refreshService(cookie) {
+  if (!cookie) {
+    
+    throw createError(401,"No cookie")
   }
 
-  const user = verifyRefreshToken(refreshToken);
+  const token = cookie.split("=")[1];
+
+  const user = verifyRefreshToken(token);
 
   if (!user) {
-    res.statusCode = 401;
-    return res.end(
-      JSON.stringify({
-        message: "Expired refresh token",
-      }),
-    );
+    
+    throw createError(401, "Invalid token")
   }
 
   const accessToken = await generateAccessToken(user);

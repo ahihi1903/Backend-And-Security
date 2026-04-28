@@ -1,0 +1,160 @@
+DAY 17 chuẩn công ty nghĩa là không còn kiểu demo lưu token trong mảng RAM nữa.
+
+Mà sẽ dùng flow gần giống production thật:
+
+✔ Access Token ngắn hạn
+✔ Refresh Token dài hạn
+✔ Refresh token lưu HttpOnly Cookie
+✔ Logout xóa cookie
+✔ Không trả refresh token ra body
+✔ Bảo mật tốt hơn Postman demo
+-----
+🎯 Vì sao công ty dùng kiểu này?
+Nếu trả refresh token ra JSON:
+{
+  "refreshToken":"..."
+}
+Frontend JS có thể đọc được.
+Nếu bị XSS:
+hacker lấy refresh token
+❌ Rất nguy hiểm.
+✅ Giải pháp chuẩn công ty
+refresh token lưu Cookie HttpOnly
+Nghĩa là:
+JS không đọc được
+browser tự gửi cookie
+-----
+Flow chuẩn
+
+POST /login
+ ↓
+server trả accessToken
+server set refreshToken cookie
+
+POST /refresh
+ ↓
+browser tự gửi cookie
+server cấp accessToken mới
+
+POST /logout
+ ↓
+clear cookie
+---------
+📁 utils/jwt.js (như cũ day17)
+
+📁 Controller chuẩn công ty
+
+Login
+export async function login(req, res) {
+  const { username, password } = req.body;
+
+  const user = await loginService(username, password);
+
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
+
+  res.setHeader(
+    "Set-Cookie",
+    `refreshToken=${refreshToken}; HttpOnly; Path=/; Max-Age=604800`
+  );
+
+  return res.end(
+    JSON.stringify({ accessToken })
+  );
+}
+🎯 Giải thích
+HttpOnly = JS không đọc được
+Max-Age = 7 ngày
+Path=/ = dùng toàn site
+
+🔥 Refresh
+export async function refresh(req, res) {
+  const cookie = req.headers.cookie;
+
+  if (!cookie) {
+    res.statusCode = 401;
+    return res.end(JSON.stringify({
+      message: "No cookie"
+    }));
+  }
+
+  const token = cookie
+    .split("=")[1];
+
+  const user = verifyRefreshToken(token);
+
+  if (!user) {
+    res.statusCode = 401;
+    return res.end(JSON.stringify({
+      message: "Invalid token"
+    }));
+  }
+
+  const accessToken =
+    generateAccessToken(user);
+
+  return res.end(
+    JSON.stringify({ accessToken })
+  );
+}
+
+🔥 Logout
+export async function logout(req, res) {
+  res.setHeader(
+    "Set-Cookie",
+    "refreshToken=; HttpOnly; Path=/; Max-Age=0"
+  );
+
+  return res.end(
+    JSON.stringify({
+      message: "Logged out"
+    })
+  );
+}
+
+📁 routes/authRoutes.js
+router.post("/login", login);
+router.post("/refresh", refresh);
+router.post("/logout", logout);
+
+--------
+🧪 Test Postman
+Login
+POST /login
+
+Body:
+
+{
+  "username":"admin",
+  "password":"123456"
+}
+
+👉 Postman sẽ tự lưu cookie.
+
+Refresh
+POST /refresh
+
+Không cần body.
+
+Logout
+POST /logout
+🎯 Vì sao đây gọi là chuẩn công ty?
+✔ refresh token không lộ frontend
+✔ browser tự quản cookie
+✔ bảo mật hơn localStorage
+✔ logout thật
+⚠️ Production nâng cấp thêm
+✔ Secure cookie
+✔ SameSite=strict
+✔ rotate refresh token
+✔ lưu DB
+✔ revoke token
+
+<----------------->
+khi nào sử dụng createError.js và errorHandler.js:
+
+createError = tạo lỗi có status code/Khi bạn muốn tự tạo lỗi có status
+errorHandler = bắt lỗi và trả response chuẩn/Khi có lỗi xảy ra để trả response
+<-------------------->
+
+

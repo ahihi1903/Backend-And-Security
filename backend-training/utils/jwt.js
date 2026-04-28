@@ -10,7 +10,7 @@ export function generateAccessToken(user) {
   return jwt.sign(
     { id: user.id, username: user.username }, //payload:tải trọng
     process.env.JWT_ACCESS_SECRET, //secret:bảo mật
-    { expiresIn: "1h" }, //option:lựa chọn 1h
+    { expiresIn: "15m" }, //option:lựa chọn 1h
   );
 }
 
