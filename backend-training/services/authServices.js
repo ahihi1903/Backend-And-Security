@@ -4,6 +4,7 @@ import { comparePassword } from "../utils/hash.js";
 import {
   generateAccessToken,
   generateRefreshToken,
+  verifyToken,
   verifyRefreshToken,
 } from "../utils/jwt.js";
 import createError from "../middlewares/createError.js";
@@ -56,13 +57,14 @@ export async function logoutService(refreshToken) {
   
 }
 
-export async function registerService(username, password) {
+export async function registerService(username, password, role) {
   const hashed = await hashPassword(password); //cho vào hàm băm tạo hash
 
   const newUser = {
     id: accounts.length + 1,
     username,
     password: hashed,
+    role: role,
   };
 
   accounts.push(newUser);

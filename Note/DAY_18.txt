@@ -1,0 +1,179 @@
+DAY 18 — Role-Based Access Control (RBAC)
+
+Bước rất quan trọng: từ “đăng nhập được” sang kiểm soát ai được làm gì.
+
+1️⃣ Vấn đề hiện tại (Day 17)
+
+Ai có token đều gọi được:
+
+GET /users
+DELETE /users/1
+POST /products
+
+❌ Không ổn.
+
+2️⃣ Giải pháp
+
+Gắn role cho account:
+
+admin
+user
+staff
+manager
+
+Và kiểm tra quyền trước route.
+
+3️⃣ Model auth.js
+export const accounts = [
+  {
+    id: 1,
+    username: "admin",
+    password: "...hash...",
+    role: "admin"
+  },
+  {
+    id: 2,
+    username: "kiki",
+    password: "...hash...",
+    role: "user"
+  }
+];
+
+4️⃣ JWT payload thêm role
+
+📁 utils/jwt.js
+
+export function generateAccessToken(user) {
+  return jwt.sign(
+    {
+      id: user.id,
+      username: user.username,
+      role: user.role
+    },
+    process.env.JWT_ACCESS_SECRET,
+    { expiresIn: "15m" }
+  );
+}
+5️⃣ auth middleware (verify token)
+
+📁 globalMiddlewares/auth.js
+
+import { verifyToken } from "../utils/jwt.js";
+import createError from "../middlewares/createError.js";
+
+export default function auth(req, res, next) {
+  const header = req.headers.authorization;
+
+  if (!header) {
+    throw createError(401, "No token");
+  }
+
+  const token = header.split(" ")[1];
+
+  const user = verifyToken(token);
+
+  if (!user || user.error) {
+    throw createError(401, "Invalid token");
+  }
+
+  req.user = user;
+
+  next();
+}
+6️⃣ Role middleware
+
+📁 globalMiddlewares/role.js
+
+import createError from "../middlewares/createError.js";
+
+export default function role(...allowedRoles) {
+  return function (req, res, next) {
+    if (!req.user) {
+      throw createError(401, "Unauthorized");
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      throw createError(403, "Forbidden");
+    }
+
+    next();
+  };
+}
+7️⃣ Route dùng quyền
+
+📁 routes/userRoutes.js
+
+import auth from "../globalMiddlewares/auth.js";
+import role from "../globalMiddlewares/role.js";
+
+router.get("/users", auth, role("admin"), getAllUsers);
+
+router.delete(
+  "/users/:id",
+  auth,
+  role("admin"),
+  deleId
+);
+
+router.get(
+  "/profile",
+  auth,
+  role("admin", "user", "staff"),
+  profile
+);
+8️⃣ Kết quả test Postman
+Login bằng admin
+{
+  "accessToken":"..."
+}
+GET /users
+
+✅ Thành công
+
+Login bằng user thường
+GET /users
+{
+  "message":"Forbidden"
+}
+GET /profile
+
+✅ Thành công
+
+9️⃣ HTTP status đúng chuẩn
+Code	Nghĩa
+401	Chưa login / token sai
+403	Có login nhưng không đủ quyền
+🔟 Flow thực chiến
+request
+ ↓
+auth middleware
+ ↓
+req.user = decoded token
+ ↓
+role middleware
+ ↓
+controller
+11️⃣ Vì sao đây quan trọng?
+
+Backend junior biết login.
+Backend tốt biết:
+
+ai được xem gì
+ai được sửa gì
+ai được xóa gì
+12️⃣ Nâng cấp công ty lớn
+
+Không hardcode "admin":
+
+permission:
+user.read
+user.delete
+product.create
+
+(ABAC / Permission System)
+<-------------------->
+TRONG jwt.js THIẾU MỘT HÀM verifyToken() !!!!!!!
+<---------------->
+test postman đang bị lỗi invalid 401
+lỗi vì không thêm req.role vào registerService -> user thiếu role
+<--------------------->

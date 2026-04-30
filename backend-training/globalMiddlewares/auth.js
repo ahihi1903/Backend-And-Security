@@ -1,11 +1,22 @@
-export default function auth(req, res, next) {
-  const token = req.headers.authorization;
+// //xác thực
+// import { verifyRefreshToken } from "../utils/jwt.js";
+// import createError from "./createError.js";
 
-  if (!token) {
-    return res.status(401).json({
-      message: "Unauthorized",
-    });
-  }
+// export default function auth(req, res, next) {
+//   const header = req.headers.authorization;
 
-  next();
-}
+//   if (!header) {
+//     throw createError(401, "No token");
+//   }
+
+//   const token = header.split(" ")[1];
+
+//   const user = verifyRefreshToken(token);
+
+//   if (!user || user.error) {
+//     throw createError(401, "Invalid token");
+//   }
+
+//   req.user = user;
+//   next();
+// }

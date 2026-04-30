@@ -55,9 +55,9 @@ export async function logout(req, res) {
 
 export async function register(req, res) {
   //hàm đăng ký
-  const { username, password } = req.body;
+  const { username, password, role } = req.body;
 
-  await registerService(username, password);
+  await registerService(username, password, role);
 
   res.statusCode = 201;
   res.end(JSON.stringify({ message: "User created" }));

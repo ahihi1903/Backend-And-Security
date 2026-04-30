@@ -1,5 +1,5 @@
 //xác thực
-import { verifyRefreshToken } from "../utils/jwt.js";
+import { verifyToken } from "../utils/jwt.js";
 import createError from "./createError.js";
 
 export default function auth(req, res, next) {
@@ -10,10 +10,14 @@ export default function auth(req, res, next) {
   }
 
   const token = header.split(" ")[1];
+  if (!token) {
+    throw createError(402, "No token");
+  }
+  
+  const user = verifyToken(token);
 
-  const user = verifyRefreshToken(token);
-
-  if (!user) {
+  
+  if (!user || user.error) {
     throw createError(401, "Invalid token");
   }
 
