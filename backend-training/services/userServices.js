@@ -12,18 +12,47 @@ async function createUser(name) {
   return newUser;
 }
 
-async function getAll(page, limit) {
-  const users = getUsers();
+async function getAll(page, limit, search, sort, role) {
+  let users = getUsers();
 
+  //chuẩn hóa input
   const pageGet = Math.max(Number(page) || 1, 1);
-  const limitGet = Math.max(Number(limit) || users.length, 1);
+  const limitGet = Math.min(Math.max(Number(limit) || 5, 1), 20); // chống spam
+  const searchGet = (search || "").toLowerCase();
+  const sortGet = sort || "";
+  const roleGet = role || "";
+
+  // 🔎 SEARCH
+  if (searchGet) {
+    users = users.filter((u) => u.name.toLowerCase().includes(searchGet));
+  }
+
+  // 🛡 FILTER (role)
+  if (roleGet) {
+    users = users.filter((u) => u.role === roleGet);
+  }
+
+  // 🔽 SORT
+  if (sortGet === "name") {
+    users.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  // 📄 PAGINATION
+  const total = users.length;
 
   const start = (pageGet - 1) * limitGet;
   const end = start + limitGet;
 
-  const result = users.slice(start, end);
+  const data = users.slice(start, end);
 
-  return result;
+  // 📦 RESPONSE chuẩn
+  return {
+    success: true,
+    total,
+    page: pageGet,
+    limit: limitGet,
+    data,
+  };
 }
 
 async function getUserId(id) {
