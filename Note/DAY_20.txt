@@ -1,0 +1,469 @@
+DAY_20:EXPRESS
+
+<--------------------------->
+tóm tắt lại tự build mini framework:
+
+🧠 Tổng quan trước khi đi sâu
+
+Bạn đang có một mini framework gồm:
+
+http.createServer → nhận request
+runMiddlewares → middleware global
+matchRoute → tìm route
+handlers + next() → chạy middleware + controller
+parseBody → đọc body
+🚀 1. Khi có request gửi tới (BƯỚC KHỞI ĐẦU)
+
+Ví dụ client gọi:
+
+GET /users?page=1&limit=2
+👉 Node chạy vào đây:
+const server = http.createServer(async (req, res) => {
+
+💥 Đây là entry point của mọi request
+
+🔥 2. Chạy middleware global
+await runMiddlewares(req, res);
+👉 runMiddlewares hoạt động
+let index = 0;
+
+async function next() {
+  const middleware = middlewares[index++];
+  if (!middleware) return;
+
+  await middleware(req, res, next);
+}
+
+await next();
+📌 Flow thực tế:
+
+Giả sử bạn có:
+
+use(logger);
+👉 Chạy:
+next()
+ → logger(req, res, next)
+     → console.log("request")
+     → next()
+         → hết middleware → return
+
+💡 Kết luận:
+
+runMiddlewares = chạy middleware global TRƯỚC khi vào route
+🔥 3. Parse URL + Query
+const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+const pathname = parsedUrl.pathname;
+req.query = Object.fromEntries(parsedUrl.searchParams);
+📌 Ví dụ:
+/users?page=1&limit=2
+
+👉 Kết quả:
+
+pathname = "/users"
+
+req.query = {
+  page: "1",
+  limit: "2"
+}
+🔥 4. Parse Body
+const body = await parseBody(req);
+req.body = body;
+👉 parseBody hoạt động:
+req.on("data") → nhận từng chunk
+req.on("end") → ghép lại → JSON.parse
+
+💡 Ví dụ:
+
+POST /login
+{
+  "username": "admin",
+  "password": "123"
+}
+
+👉 kết quả:
+
+req.body = {
+  username: "admin",
+  password: "123"
+}
+🔥 5. Gắn helper cho response
+res.status = function (code) { ... }
+res.json = function (data) { ... }
+
+👉 Giúp bạn viết:
+
+res.status(200).json({ message: "ok" });
+🔥 6. Match route (QUAN TRỌNG NHẤT)
+const matched = matchRoute(req.method, pathname);
+👉 matchRoute làm gì?
+
+Ví dụ bạn có:
+
+addRoute("GET", "/users/:id", handler);
+Request:
+GET /users/123
+Flow:
+routeParts = ["users", ":id"]
+urlParts   = ["users", "123"]
+
+→ match từng phần:
+
+"users" === "users" ✅
+":id" → param → params.id = "123"
+
+👉 Kết quả:
+
+matched = {
+  handlers: [...middlewares, handler],
+  params: { id: "123" }
+}
+🔥 7. Gán params
+req.params = matched.params;
+
+👉 Bạn dùng được:
+
+req.params.id // "123"
+🔥 8. Chạy HANDLERS (middleware + controller)
+const handlers = matched.handlers;
+let index = 0;
+
+async function next(err) { ... }
+
+await next();
+⚡ 9. Đây là phần quan trọng nhất: next()
+👉 Lần gọi đầu:
+await next();
+👉 Flow chi tiết:
+🔹 Lần 1
+index = 0
+handler = handlers[0]
+
+Nếu là middleware:
+
+await handler(req, res, next);
+🔹 Middleware gọi:
+next();
+🔹 Lần 2
+index = 1
+handler = handlers[1]
+🔹 Nếu là controller:
+await handler(req, res);
+await next();
+🔹 Lần 3
+index = 2 → undefined → return
+
+💡 Kết luận:
+
+next() = engine chạy tuần tự các function
+🔥 10. Error handling
+
+Nếu có lỗi:
+
+next(error);
+
+👉 vào đây:
+
+if (err) {
+  return errorHandler(err, req, res);
+}
+
+💡 Tức là:
+
+throw error → catch → next(error) → errorHandler
+🔥 11. Nếu không match route
+return res.status(404).json({ message: "Route not found" });
+🎯 12. Tổng flow FULL
+REQUEST
+ ↓
+http.createServer
+ ↓
+runMiddlewares (global)
+ ↓
+parse URL
+ ↓
+parse query
+ ↓
+parse body
+ ↓
+matchRoute
+ ↓
+gán req.params
+ ↓
+handlers (middleware + controller)
+ ↓
+res.json
+
+-------------------
+🧠 1. Câu hỏi của bạn
+
+“Có phải phải chạy vào routes trước để có routes[] và routeMiddlewares[] không?”
+
+👉 Đúng ở mức: phải load trước
+👉 Sai ở mức: không phải chạy vào routes khi request tới
+
+🔥 2. Có 2 giai đoạn khác nhau (cực kỳ quan trọng)
+🟢 GIAI ĐOẠN 1: Khi server KHỞI ĐỘNG
+import "./routes/userRoutes.js";
+import "./routes/authRoutes.js";
+
+👉 Lúc này:
+
+file userRoutes.js chạy
+file authRoutes.js chạy
+📌 Ví dụ:
+// userRoutes.js
+addRoute("GET", "/users", getUsers);
+
+👉 Khi import:
+
+→ addRoute được gọi NGAY LẬP TỨC
+→ routes.push(...)
+👉 Kết quả sau khi server start:
+routes = [
+  { method: "GET", path: "/users", handlers: [...] },
+  { method: "POST", path: "/login", handlers: [...] }
+]
+
+routeMiddlewares = [...]
+
+💡 Tức là:
+
+routes[] đã được build sẵn TRƯỚC khi có request
+🔴 GIAI ĐOẠN 2: Khi có REQUEST
+http.createServer((req, res) => { ... })
+
+👉 Lúc này:
+
+KHÔNG chạy lại routes nữa ❌
+
+👉 Chỉ làm:
+
+matchRoute(req.method, pathname);
+⚡ 3. Flow đúng phải là
+SERVER START
+ ↓
+import routes
+ ↓
+routes[] được build sẵn
+ ↓
+SERVER LISTEN
+
+=====================
+
+REQUEST tới
+ ↓
+matchRoute()
+ ↓
+tìm trong routes[]
+ ↓
+chạy handler
+🎯 4. So sánh để bạn hiểu sâu hơn
+❌ Bạn đang nghĩ:
+request
+ ↓
+routes chạy
+ ↓
+routes[] được tạo
+ ↓
+matchRoute
+
+👉 Sai ❌
+
+✅ Thực tế:
+server start
+ ↓
+routes chạy (1 lần duy nhất)
+ ↓
+routes[] tồn tại sẵn
+
+request tới
+ ↓
+matchRoute dùng routes[]
+🔥 5. Ví dụ thực tế (rất rõ)
+Khi start server
+console.log("userRoutes loaded");
+
+addRoute("GET", "/users", handler);
+
+👉 console:
+
+userRoutes loaded
+
+👉 chạy 1 lần duy nhất
+
+Khi request tới
+GET /users
+
+👉 KHÔNG in lại "userRoutes loaded"
+
+👉 chỉ chạy:
+
+matchRoute()
+💎 6. Insight cực quan trọng
+routes = CONFIG
+matchRoute = ENGINE
+
+👉 nghĩa là:
+
+routes giống như bản đồ
+matchRoute là người đọc bản đồ
+🚀 7. Liên hệ với Express
+
+Trong Express.js cũng y chang:
+
+Khi start:
+app.get("/users", handler);
+
+👉 Express lưu vào internal router
+
+Khi request:
+Express router → tìm route → chạy handler
+🎯 8. Chốt lại (rất quan trọng)
+routes chỉ chạy 1 lần khi server start
+KHÔNG chạy mỗi request
+
+<---------------------------->
+Express:
+
+🧠 So sánh để bạn hiểu ngay
+Code cũ của bạn
+http.createServer((req, res) => { ... })
+matchRoute()
+parseBody()
+next()
+Express làm giúp bạn
+app.use(express.json())
+app.get("/users", handler)
+app.use(errorHandler)
+
+👉 Bạn chỉ viết business logic.
+
+🚀 BƯỚC 1 — Cài Express
+npm init -y
+npm install express
+📁 Cấu trúc chuẩn công ty
+project/
+│
+├── controllers/
+├── services/
+├── routes/
+├── middlewares/
+├── utils/
+├── app.js
+└── server.js
+🚀 BƯỚC 2 — Tạo app.js
+import express from "express";
+import userRoutes from "./routes/userRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+import errorHandler from "./middlewares/errorHandler.js";
+
+const app = express();
+
+// thay parseBody
+app.use(express.json());
+
+// routes
+app.use("/users", userRoutes);
+app.use("/auth", authRoutes);
+
+// error handler
+app.use(errorHandler);
+
+export default app;
+🚀 BƯỚC 3 — server.js
+import app from "./app.js";
+
+app.listen(3000, () => {
+  console.log("Server running at http://localhost:3000");
+});
+🚀 BƯỚC 4 — Router (Express)
+
+📁 routes/userRoutes.js
+
+import express from "express";
+import { getAllUsers, getId } from "../controllers/userController.js";
+import auth from "../middlewares/auth.js";
+import role from "../middlewares/role.js";
+
+const router = express.Router();
+
+router.get("/", auth, role("admin"), getAllUsers);
+router.get("/:id", auth, getId);
+
+export default router;
+🚀 BƯỚC 5 — Controller (GIỮ NGUYÊN)
+export function getAllUsers(req, res) {
+  const users = getUsers();
+  res.json(users); // express có sẵn
+}
+🚀 BƯỚC 6 — Middleware auth
+import { verifyToken } from "../utils/jwt.js";
+
+export default function auth(req, res, next) {
+  const header = req.headers.authorization;
+
+  if (!header) {
+    return res.status(401).json({
+      message: "No token"
+    });
+  }
+
+  const token = header.split(" ")[1];
+
+  const user = verifyToken(token);
+
+  if (!user) {
+    return res.status(401).json({
+      message: "Invalid token"
+    });
+  }
+
+  req.user = user;
+
+  next();
+}
+🚀 BƯỚC 7 — Middleware role
+export default function role(...roles) {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        message: "Forbidden"
+      });
+    }
+
+    next();
+  };
+}
+🚀 BƯỚC 8 — Error handler chuẩn Express
+export default function errorHandler(err, req, res, next) {
+  res.status(err.status || 500).json({
+    message: err.message
+  });
+}
+🚀 BƯỚC 9 — Auth routes
+import express from "express";
+import { login, register } from "../controllers/authController.js";
+
+const router = express.Router();
+
+router.post("/login", login);
+router.post("/register", register);
+
+export default router;
+🎯 So sánh trước vs sau
+Mini Node	Express
+parseBody	express.json()
+matchRoute	router
+next() tự viết	Express built-in
+res.end	res.json
+🧪 Test Postman
+Login
+POST /auth/login
+Users
+GET /users
+Authorization: Bearer token
+🎯 Kết quả bạn đạt được
+✔ Code ngắn hơn 70%
+✔ Giống công ty thật
+✔ Dễ thêm database
+✔ Dễ deploy

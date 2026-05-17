@@ -4,29 +4,29 @@ import {
   deleId,
   getAllUsers,
 } from "../controllers/userController.js";
-import { addRoute, addRouteMiddleware } from "../middlewares/router.js";
-//import auth from "../globalMiddlewares/auth.js";
+
 import validateUser from "../globalMiddlewares/validateUser.js";
 import checkIdUser from "../globalMiddlewares/checkID.js";
 import asyncHandler from "../middlewares/asyncHandler.js";
 import auth from "../middlewares/auth.js";
 import role from "../globalMiddlewares/role.js";
+import express from "express";
 
-const router = {
-  get: (path, ...handlers) => addRoute("GET", path, ...handlers),
-  post: (path, ...handlers) => addRoute("POST", path, ...handlers),
-  delete: (path, ...handlers) => addRoute("DELETE", path, ...handlers),
-  //use: (path, ...handlers) => addRouteMiddleware(path, ...handlers),
-};
+const router = express.Router();
 
-// apply auth middleware to all /users routes
-//router.use("/users", auth);
+router.get("/", auth, role("admin"), asyncHandler(getAllUsers));
 
-router.get("/users", auth, role("admin"), asyncHandler(getAllUsers));
-
-router.get("/users/:id",auth, role("admin", "user", "staff"), checkIdUser, asyncHandler(getId));
+router.get(
+  "/:id",
+  auth,
+  role("admin", "user", "staff"),
+  checkIdUser,
+  asyncHandler(getId),
+);
 
 // validateUser is route middleware applied only to POST /users
-router.post("/users", validateUser, asyncHandler(postId));
+router.post("/", validateUser, asyncHandler(postId));
 
-router.delete("/users/:id",auth, role("admin"), checkIdUser, asyncHandler(deleId));
+router.delete("/:id", auth, role("admin"), checkIdUser, asyncHandler(deleId));
+
+export default router;

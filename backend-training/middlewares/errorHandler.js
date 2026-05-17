@@ -1,9 +1,5 @@
-export default function errorHandler(err, req, res) {
-  res.statusCode = err.status || 500;
-
-  res.end(
-    JSON.stringify({
-      message: err.message || "Internal Server Error",
-    }),
-  );
+export default function errorHandler(err, req, res, next) {
+  return res.status(err.status || 500).json({
+    message: err.message || "Internal Server Error"
+  });
 }

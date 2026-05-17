@@ -8,7 +8,7 @@ import {
   verifyRefreshToken,
 } from "../utils/jwt.js";
 import createError from "../middlewares/createError.js";
-import { refreshTokens } from "../controllers/authController.js";
+import { refreshTokens } from "../store/tokenStore.js";
 
 export async function loginService(username, password) {
   const user = accounts.find((u) => u.username === username);
@@ -27,37 +27,44 @@ export async function loginService(username, password) {
   return user; //chỉ trả user
 }
 
-export async function refreshService(cookie) {
-  if (!cookie) {
-    
-    throw createError(401,"No cookie")
+export async function refreshService(refreshToken) {
+  if (!refreshToken) {
+    throw createError(401, "No token");
   }
 
-  const token = cookie.split("=")[1];
+  //const token = cookie.split("=")[1];
+  // 👉 CHECK TOKEN CÓ TRONG STORE
+  if (!refreshTokens.includes(refreshToken)) {
+    throw createError(403, "Token revoked");
+  }
 
-  const user = verifyRefreshToken(token);
+  const user = verifyRefreshToken(refreshToken);
 
   if (!user) {
-    
-    throw createError(401, "Invalid token")
+    throw createError(401, "Invalid token");
   }
 
   const accessToken = await generateAccessToken(user);
 
   return accessToken;
-
 }
 
 export async function logoutService(refreshToken) {
   const index = refreshTokens.indexOf(refreshToken);
 
-  if(index!==-1){
+  if (index !== -1) {
     refreshTokens.splice(index, 1);
   }
-  
 }
 
 export async function registerService(username, password, role) {
+  //THÊM VALIDATION
+  const exists = accounts.find((u) => u.username === username);
+
+  if (exists) {
+    throw createError(400, "User already exists");
+  }
+  ////
   const hashed = await hashPassword(password); //cho vào hàm băm tạo hash
 
   const newUser = {

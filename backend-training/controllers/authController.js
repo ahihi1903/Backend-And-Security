@@ -10,7 +10,8 @@ import {
   registerService,
 } from "../services/authServices.js";
 
-export const refreshTokens = [];
+//export const refreshTokens = [];
+import { refreshTokens } from "../store/tokenStore.js";
 
 export async function login(req, res) {
   //hàm đăng nhập
@@ -21,36 +22,34 @@ export async function login(req, res) {
   const accessToken = await generateAccessToken(user); //time ngắn hạn
   const refreshToken = await generateRefreshToken(user); //time dài hạn
 
-  //refreshTokens.push(refreshToken);
-  res.setHeader(
-    "Set-Cookie",
-    `refreshToken=${refreshToken}; HttpOnly; Path=/; Max-Age=604800`,
-  );
+  refreshTokens.push(refreshToken);
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: "strict",
+  });
 
-  return res.end(JSON.stringify({ accessToken })); //, refreshToken
+  return res.json({ accessToken });
 }
 
 export async function refresh(req, res) {
-  const cookie = req.headers.cookie;
+  const refreshToken = req.cookies.refreshToken;
 
-  const accessToken = await refreshService(cookie);
+  const accessToken = await refreshService(refreshToken);
 
-  return res.end(
-    JSON.stringify({
-      accessToken,
-    }),
-  );
+  return res.json({
+    accessToken,
+  });
 }
 
 export async function logout(req, res) {
-  // const { refreshToken } = req.body;
-  // await logoutService(refreshToken);
-  res.setHeader("Set-Cookie", "refreshToken=; HttpOnly; Path=/; Max-Age=0");
-  return res.end(
-    JSON.stringify({
-      message: "Logged Out",
-    }),
-  );
+  const refreshToken = req.cookies.refreshToken;
+
+  await logoutService(refreshToken);
+
+  res.clearCookie("refreshToken");
+
+  return res.json({ message: "Logged out" });
 }
 
 export async function register(req, res) {
@@ -59,6 +58,7 @@ export async function register(req, res) {
 
   await registerService(username, password, role);
 
-  res.statusCode = 201;
-  res.end(JSON.stringify({ message: "User created" }));
+  return res.status(201).json({
+    message: "User created",
+  });
 }

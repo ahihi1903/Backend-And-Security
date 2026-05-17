@@ -6,19 +6,27 @@ export default function auth(req, res, next) {
   const header = req.headers.authorization;
 
   if (!header) {
-    throw createError(401, "No token");
+    //throw createError(401, "No token");
+    return res.status(401).json({
+      message: "No token",
+    });
   }
 
   const token = header.split(" ")[1];
   if (!token) {
-    throw createError(402, "No token");
+    //throw createError(402, "No token");
+    return res.status(402).json({
+      message: "No token",
+    });
   }
-  
+
   const user = verifyToken(token);
 
-  
   if (!user || user.error) {
-    throw createError(401, "Invalid token");
+    //throw createError(401, "Invalid token");
+    return res.status(401).json({
+      message: "Invalid token",
+    });
   }
 
   req.user = user;
