@@ -70,15 +70,7 @@ export async function registerService(username, password, role) {
   ////
   const hashed = await hashPassword(password); //cho vào hàm băm tạo hash
 
-  // const newUser = {
-  //   id: accounts.length + 1,
-  //   username,
-  //   password: hashed,
-  //   role: role,
-  // };
-  // accounts.push(newUser);
-  //return newUser;
-
+  
   return await Auth.create({
     username,
     password: hashed,

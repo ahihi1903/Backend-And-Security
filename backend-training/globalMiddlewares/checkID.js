@@ -1,9 +1,11 @@
 import createError from "../middlewares/createError.js";
-
+import mongoose from "mongoose";
 export default function checkIdUser(req, res, next) {
-  const id = Number(req.params.id.trim());
+  const { id } = req.params;
 
-  if (Number.isNaN(id) || id <= 0) {
+  const isValid = mongoose.Types.ObjectId.isValid(id);
+
+  if (!isValid) {
     throw createError(400, "Invalid user id");
   }
 
