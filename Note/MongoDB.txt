@@ -1,0 +1,4 @@
+username:abibihkt_db_user
+pass:o47yCjgbXp4ekJIj
+
+mongodb+srv://abibihkt_db_user:o47yCjgbXp4ekJIj@cluster0.5e5m0qw.mongodb.net/?appName=Cluster0

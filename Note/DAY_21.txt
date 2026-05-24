@@ -1,0 +1,195 @@
+DAY 21 — Database thật (MongoDB + Mongoose)
+
+Mục tiêu Day 21
+
+Chuyển từ:
+
+accounts.push(newUser)
+
+thành:
+
+await User.create(newUser)
+
+📦 Day 21 học gì?
+1. MongoDB
+2. MongoDB Atlas (cloud db)
+3. Mongoose
+4. Schema + Model
+5. CRUD thật
+6. Auth dùng DB thật
+
+🚀 STEP 1 — Cài package
+npm install mongoose
+🚀 STEP 2 — Tạo database.js
+
+📁 config/database.js
+
+import mongoose from "mongoose";
+
+export default async function connectDB() {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+
+    console.log("MongoDB connected");
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
+}
+🚀 STEP 3 — .env
+MONGO_URI=mongodb://localhost:27017/backend-training
+🚀 STEP 4 — connect trong server.js
+import app from "./app.js";
+import connectDB from "./config/database.js";
+
+await connectDB();
+
+app.listen(3000, () => {
+  console.log("Server running");
+});
+🚀 STEP 5 — Tạo User Model
+
+📁 models/User.js
+
+import mongoose from "mongoose";
+
+const userSchema = new mongoose.Schema(
+  {
+    username: {
+      type: String,
+      required: true,
+      unique: true
+    },
+
+    password: {
+      type: String,
+      required: true
+    },
+
+    role: {
+      type: String,
+      enum: ["admin", "user"],
+      default: "user"
+    }
+  },
+  {
+    timestamps: true
+  }
+);
+
+export default mongoose.model(
+  "User",
+  userSchema
+);
+🧠 Giải thích
+required
+required: true
+
+Bắt buộc.
+
+unique
+unique: true
+
+Không trùng username.
+
+enum
+["admin", "user"]
+
+Chỉ cho role hợp lệ.
+
+timestamps
+
+Tự tạo:
+
+createdAt
+updatedAt
+🚀 STEP 6 — Register service
+Trước đây
+accounts.push(newUser);
+Giờ
+
+📁 services/authService.js
+
+import User from "../models/User.js";
+import { hashPassword } from "../utils/hash.js";
+
+export async function registerService(
+  username,
+  password,
+  role
+) {
+  const existing = await User.findOne({
+    username
+  });
+
+  if (existing) {
+    throw createError(
+      400,
+      "Username already exists"
+    );
+  }
+
+  const hashed =
+    await hashPassword(password);
+
+  return await User.create({
+    username,
+    password: hashed,
+    role
+  });
+}
+🚀 STEP 7 — Login service
+import User from "../models/User.js";
+
+export async function loginService(
+  username,
+  password
+) {
+  const user = await User.findOne({
+    username
+  });
+
+  if (!user) {
+    throw createError(
+      401,
+      "User not found"
+    );
+  }
+
+  const isMatch =
+    await comparePassword(
+      password,
+      user.password
+    );
+
+  if (!isMatch) {
+    throw createError(
+      401,
+      "Wrong password"
+    );
+  }
+
+  return user;
+}
+🧪 Test Postman
+Register
+POST /auth/register
+
+Body:
+
+{
+  "username":"admin",
+  "password":"123456",
+  "role":"admin"
+}
+Login
+POST /auth/login
+✅ MongoDB sẽ có document
+{
+  "_id":"...",
+  "username":"admin",
+  "password":"$2b$10...",
+  "role":"admin",
+  "createdAt":"...",
+  "updatedAt":"..."
+}

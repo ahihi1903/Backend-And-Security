@@ -1,14 +1,22 @@
-export const accounts = [
+import mongoose from "mongoose";
+
+const authSchema = new mongoose.Schema(
   {
-    id: 1,
-    username: "admin1",
-    password: "$2b$10$RcIGkdWvONPkNAvQ20zhG.bJo7EmnfKb8SekXqaUdtvkGDC3k8J1u",
-    role: "admin", //role: vai trò
+    username: {
+      type: String,
+      require: true, //tính bắt buộc
+      unique: true, //tính độc nhất (không trùng)
+    },
+    password: {
+      type: String,
+      require: true,
+    },
+    role: {
+      type: String,
+      enum: ["admin", "user"], //chỉ cho role hợp lệ
+      default: "user",
+    },
   },
-  {
-    id: 2,
-    username: "kiki",
-    password: "$2b$10$RcIGkdWvONPkNAvQ20zhG.bJo7EmnfKb8SekXqaUdtvkGDC3k8J1u",
-    role: "user",
-  },
-];
+  { timestamps: true }, //tự tạo createdAt & updatedAt
+);
+export default mongoose.model("Auth", authSchema);

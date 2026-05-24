@@ -1,0 +1,390 @@
+Đúng rồi. Khi backend dùng Express chạy, tư duy chuẩn là có 2 giai đoạn lớn:
+
+1. Giai đoạn khởi động (Startup Phase)
+
+Chạy 1 lần duy nhất khi bạn node server.js
+
+2. Giai đoạn xử lý request (Request Phase)
+
+Chạy mỗi lần client gửi request
+
+Đây là tư duy backend rất quan trọng.
+
+1️⃣ GIAI ĐOẠN KHỞI ĐỘNG (Startup Phase)
+
+Ví dụ:
+
+import express from "express";
+import logger from "./middlewares/logger.js";
+import authRoutes from "./routes/authRoutes.js";
+import errorHandler from "./middlewares/errorHandler.js";
+
+const app = express();
+
+// middleware
+app.use(express.json());
+app.use(logger);
+
+// routes
+app.use("/auth", authRoutes);
+
+// error middleware
+app.use(errorHandler);
+
+app.listen(3000, () => {
+  console.log("Server running");
+});
+Luồng chạy thực tế
+
+Khi:
+
+node server.js
+
+Node đọc file từ trên xuống dưới
+
+Bước 1 — Load module (import)
+import express from "express";
+
+Node load package Express vào RAM.
+
+import logger from "./middlewares/logger.js";
+
+Node chạy file:
+
+logger.js
+
+để lấy function:
+
+function logger(req,res,next)
+
+Nhưng:
+
+❗ KHÔNG chạy middleware
+
+Chỉ load vào memory.
+
+Tương tự:
+
+import authRoutes from "./routes/authRoutes.js";
+
+Node chạy:
+
+authRoutes.js
+
+Ví dụ:
+
+const router = express.Router();
+
+router.post("/login", login);
+
+export default router;
+
+→ tạo object router trong RAM.
+
+Nhưng:
+
+❌ chưa login
+❌ chưa controller chạy
+
+Chỉ là:
+
+“Đăng ký route trước”
+
+Bước 2 — Tạo app Express
+const app = express();
+
+Express tạo object app:
+
+app = {
+ use(){},
+ get(){},
+ post(){},
+ listen(){}
+}
+
+Giống mini framework bạn tự build:
+
+const routes = [];
+const middlewares = [];
+Bước 3 — Đăng ký middleware
+app.use(express.json());
+
+Express thêm middleware parse body vào stack.
+
+Giống:
+
+middlewares.push(jsonMiddleware)
+app.use(logger);
+
+Express lưu:
+
+middleware stack:
+1. express.json()
+2. logger
+
+⚠️ Chưa chạy logger
+
+Chỉ:
+
+“Khi có request thì chạy”
+
+Bước 4 — Đăng ký routes
+app.use("/auth", authRoutes);
+
+Express lưu route table:
+
+POST /auth/login
+POST /auth/register
+POST /auth/refresh
+
+Giống mini framework:
+
+routes.push({
+ method: "POST",
+ path: "/auth/login",
+ handler: login
+})
+Bước 5 — Đăng ký error handler
+app.use(errorHandler);
+
+Express nhớ:
+
+“Nếu có lỗi → chạy cái này”
+
+Bước 6 — Mở server
+app.listen(3000)
+
+Thực chất Express làm:
+
+http.createServer(app)
+
+và mở cổng:
+
+localhost:3000
+
+Lúc này server:
+
+ĐANG ĐỢI REQUEST
+
+Nó không làm gì cả.
+
+Chỉ đứng chờ.
+
+Giống:
+
+while(true){
+   đợi request
+}
+2️⃣ GIAI ĐOẠN CÓ REQUEST (Request Phase)
+
+Ví dụ Postman gửi:
+
+POST /auth/login
+
+body:
+
+{
+  "username":"admin",
+  "password":"123"
+}
+Bước 1 — Request vào server
+
+Node nhận request:
+
+req
+res
+
+Express bắt đầu xử lý.
+
+Bước 2 — Chạy middleware stack theo thứ tự
+
+Express chạy:
+
+Middleware 1
+express.json()
+
+Nó đọc body:
+
+{
+ "username":"admin"
+}
+
+rồi gắn:
+
+req.body
+
+Thành:
+
+req.body = {
+ username: "admin",
+ password: "123"
+}
+
+xong:
+
+next()
+Middleware 2
+logger
+
+chạy:
+
+console.log(req.method)
+
+in:
+
+POST /auth/login
+
+xong:
+
+next()
+Bước 3 — Match route
+
+Express tìm route phù hợp:
+
+POST /auth/login
+
+Tìm trong route table.
+
+Thấy:
+
+router.post("/login", login)
+
+→ match thành công.
+
+Bước 4 — Chạy controller
+
+Express gọi:
+
+login(req,res)
+
+Controller:
+
+export async function login(req, res) {
+  const { username, password } = req.body;
+
+  const user =
+    await loginService(username,password);
+
+  const accessToken =
+    generateAccessToken(user);
+
+  return res.json({
+    accessToken
+  });
+}
+Bước 5 — Service chạy
+loginService()
+
+check DB/model:
+
+accounts.find(...)
+
+so password.
+
+Nếu đúng:
+
+return user
+Bước 6 — Controller trả response
+res.json({
+ accessToken
+})
+
+Express tự làm:
+
+JSON.stringify()
+
+set header:
+
+Content-Type: application/json
+
+và:
+
+res.end()
+
+Response trả về Postman.
+
+Kết thúc request.
+
+🔥 Nếu lỗi xảy ra
+
+Ví dụ:
+
+throw createError(401, "Wrong password");
+
+Express sẽ bỏ qua:
+
+controller
+middleware thường
+
+và nhảy thẳng tới:
+
+errorHandler(err, req, res, next)
+
+Ví dụ:
+
+export default function errorHandler(
+  err,
+  req,
+  res,
+  next
+){
+  return res.status(
+    err.status || 500
+  ).json({
+    message:
+      err.message
+  });
+}
+
+Postman:
+
+{
+  "message":"Wrong password"
+}
+Luồng tổng thể thực tế
+node server.js
+        │
+        ▼
+Load imports
+        │
+        ▼
+Create app
+        │
+        ▼
+Register middleware
+        │
+        ▼
+Register routes
+        │
+        ▼
+Open port
+        │
+        ▼
+WAIT REQUEST
+═══════════════════
+CLIENT REQUEST
+        │
+        ▼
+express.json()
+        │
+        ▼
+logger
+        │
+        ▼
+auth middleware
+        │
+        ▼
+match route
+        │
+        ▼
+controller
+        │
+        ▼
+service
+        │
+        ▼
+response
+
+Đây chính là cách backend Express chạy thật khi đi làm. Tư duy này cực kỳ quan trọng vì sau này debug lỗi, bạn phải biết:
+
+request đang chết ở middleware nào, controller nào, service nào, hay error handler nào.
