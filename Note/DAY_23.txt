@@ -1,0 +1,663 @@
+🔥 DAY 23 — Upload file với Multer (chuẩn thực tập backend)
+
+Hôm nay bạn sẽ học upload avatar/CV/hình ảnh sản phẩm bằng multipart/form-data.
+
+Mục tiêu cuối buổi:
+
+POST /upload/avatar
+
+Upload ảnh bằng Postman → server lưu file → trả URL ảnh.
+
+1️⃣ Tại sao cần Multer?
+
+express.json() chỉ xử lý:
+
+{
+  "username": "kiki"
+}
+
+Nhưng file upload là:
+
+multipart/form-data
+
+nên Express không đọc được file.
+
+👉 cần:
+
+multer
+2️⃣ Cài package
+npm install multer
+3️⃣ Cấu trúc project
+
+Thêm folder:
+
+project/
+│
+├── uploads/ 🔥
+│
+├── controllers/
+├── middlewares/
+├── routes/
+
+Tạo folder:
+
+uploads
+
+Đây là nơi lưu ảnh.
+
+4️⃣ Middleware upload
+
+📁 middlewares/upload.js
+
+import multer from "multer";
+import path from "path";
+
+// cấu hình lưu file
+const storage = multer.diskStorage({
+  destination(req, file, cb) {
+    cb(null, "uploads/");
+  },
+
+  filename(req, file, cb) {
+    const uniqueName =
+      Date.now() +
+      "-" +
+      Math.round(Math.random() * 1e9);
+
+    cb(
+      null,
+      uniqueName +
+        path.extname(file.originalname)
+    );
+  }
+});
+
+// filter loại file
+function fileFilter(req, file, cb) {
+  const allowedTypes = [
+    "image/png",
+    "image/jpeg",
+    "image/jpg"
+  ];
+
+  if (
+    !allowedTypes.includes(
+      file.mimetype
+    )
+  ) {
+    return cb(
+      new Error(
+        "Only image files allowed"
+      ),
+      false
+    );
+  }
+
+  cb(null, true);
+}
+
+const upload = multer({
+  storage,
+  fileFilter,
+
+  limits: {
+    fileSize: 5 * 1024 * 1024
+  }
+});
+
+export default upload;
+🧠 Giải thích cực kỹ
+diskStorage()
+
+Quy định:
+
+lưu đâu
+tên file là gì
+destination
+uploads/
+
+Nơi lưu file.
+
+filename
+
+Nếu không đổi tên:
+
+avatar.png
+avatar.png
+
+→ bị đè file.
+
+Nên tạo tên unique:
+
+171672323-cat.png
+path.extname()
+
+Lấy phần mở rộng:
+
+.png
+.jpg
+fileFilter
+
+Chỉ cho upload:
+
+png
+jpg
+jpeg
+limits
+
+Giới hạn:
+
+5MB
+5️⃣ Controller upload
+
+📁 controllers/uploadController.js
+
+export function uploadAvatar(
+  req,
+  res
+) {
+  if (!req.file) {
+    return res.status(400).json({
+      message:
+        "No file uploaded"
+    });
+  }
+
+  return res.json({
+    success: true,
+
+    filename:
+      req.file.filename,
+
+    url:
+      `http://localhost:3000/uploads/${req.file.filename}`
+  });
+}
+🧠 req.file lấy ở đâu?
+
+Multer tự thêm:
+
+req.file
+
+Ví dụ:
+
+{
+  fieldname: "avatar",
+  originalname: "cat.png",
+  filename:
+    "1716723-cat.png",
+  mimetype: "image/png",
+  size: 12345
+}
+6️⃣ Route upload
+
+📁 routes/uploadRoutes.js
+
+import express
+from "express";
+
+import upload
+from "../middlewares/upload.js";
+
+import {
+  uploadAvatar
+}
+from "../controllers/uploadController.js";
+
+const router =
+  express.Router();
+
+router.post(
+  "/avatar",
+
+  upload.single("avatar"),
+
+  uploadAvatar
+);
+
+export default router;
+🧠 single("avatar")
+
+Nghĩa là:
+
+field name = avatar
+
+Postman phải đúng tên này.
+
+7️⃣ app.js
+
+Import route:
+
+import uploadRoutes
+from "./routes/uploadRoutes.js";
+
+Thêm:
+
+app.use(
+  "/upload",
+  uploadRoutes
+);
+8️⃣ Static file
+
+Để browser đọc ảnh:
+
+app.use(
+  "/uploads",
+  express.static("uploads")
+);
+🧪 TEST POSTMAN
+Method
+POST
+URL
+http://localhost:3000/upload/avatar
+Body
+
+Chọn:
+
+form-data
+Key
+avatar
+Type
+File
+Chọn ảnh
+cat.png
+✅ Response thành công
+{
+  "success": true,
+  "filename":
+"171672323-cat.png",
+
+  "url":
+"http://localhost:3000/uploads/171672323-cat.png"
+}
+Mở ảnh trên browser
+
+Paste:
+
+http://localhost:3000/uploads/171672323-cat.png
+
+→ thấy ảnh.
+
+❌ Lỗi thường gặp
+1. req.file undefined
+
+Sai field name.
+
+Bạn gửi:
+
+image
+
+Nhưng code:
+
+single("avatar")
+
+→ phải đúng:
+
+avatar
+2. Unexpected field
+
+Field name sai.
+
+3. File too large
+
+Ảnh > 5MB.
+
+4. Only image files allowed
+
+Upload:
+
+pdf
+txt
+zip
+🎯 Chuẩn công ty làm gì tiếp?
+
+Production không lưu local:
+
+uploads/
+
+Mà upload lên:
+
+Cloudinary
+AWS S3
+
+Mình sẽ dạy ở level sau.
+
+🎯 Bài tập Day 23
+
+Làm thêm:
+
+POST /upload/cv
+
+Chỉ cho:
+
+pdf
+docx
+
+Max:
+
+10MB
+
+Đây là bài tập giống thực tập thật.
+
+
+--------------------------------------------
+
+Day 23 không phải mục tiêu là “biết copy code upload”, mà là hiểu luồng upload file backend hoạt động như nào. Nếu đi thực tập, người ta sẽ hỏi đúng những thứ này.
+
+1. Hiểu bản chất upload file hoạt động ra sao (quan trọng nhất)
+
+Bạn phải tưởng tượng được flow này:
+
+Client (Postman/Frontend)
+        ↓
+multipart/form-data
+        ↓
+Multer middleware
+        ↓
+req.file
+        ↓
+Controller
+        ↓
+Response URL
+
+Ví dụ:
+
+Client gửi:
+
+POST /upload/avatar
+
+kèm file:
+
+cat.png
+
+↓
+
+Express không đọc được file
+
+↓
+
+multer đọc request
+
+↓
+
+Lưu file vào:
+
+uploads/
+
+↓
+
+Tự thêm:
+
+req.file
+
+↓
+
+Controller lấy:
+
+req.file.filename
+
+↓
+
+Trả URL.
+
+Nếu không hiểu flow này thì mới học được mỗi “copy code”.
+
+2. Phân biệt JSON và multipart/form-data
+
+Bạn phải hiểu:
+
+express.json()
+
+Chỉ đọc được:
+
+{
+  "username": "kiki"
+}
+
+KHÔNG đọc được file.
+
+multipart/form-data
+
+Dùng cho:
+
+✔ ảnh
+✔ pdf
+✔ cv
+✔ excel
+
+Ví dụ request thực tế:
+
+avatar: cat.png
+name: kiki
+age: 20
+
+nó không còn là JSON nữa.
+
+Nên cần:
+
+multer
+
+Đây là kiến thức rất hay bị hỏi.
+
+3. Hiểu upload.single("avatar")
+
+Cực kỳ quan trọng.
+
+upload.single("avatar")
+
+nghĩa là:
+
+chỉ nhận 1 file
+field name phải là avatar
+
+Postman:
+
+Key = avatar
+Type = File
+
+Nếu:
+
+image
+
+thì lỗi:
+
+Unexpected field
+
+Bạn phải hiểu không phải magic, mà là field name matching.
+
+4. Hiểu storage
+
+Đây là phần senior hay hỏi intern.
+
+const storage =
+multer.diskStorage()
+
+Nó trả lời 2 câu hỏi:
+
+File lưu ở đâu?
+destination(req, file, cb) {
+  cb(null, "uploads/");
+}
+
+↓
+
+uploads/
+File tên là gì?
+filename(req, file, cb)
+
+Ví dụ:
+
+file gốc:
+
+cat.png
+
+đổi thành:
+
+1779836704409-180311051.png
+
+để tránh:
+
+cat.png
+cat.png
+
+bị ghi đè.
+
+5. Hiểu req.file
+
+Sau Multer:
+
+req.file
+
+được thêm vào request.
+
+Bạn phải biết inspect nó:
+
+console.log(req.file);
+
+Nó ra:
+
+{
+  fieldname: "avatar",
+  originalname: "cat.png",
+  filename:
+   "1716723-cat.png",
+  mimetype:
+   "image/png",
+  size: 12345
+}
+
+Bạn phải hiểu từng field:
+
+Field	Nghĩa
+originalname	tên file gốc
+filename	tên sau khi server đổi
+mimetype	loại file
+size	kích thước
+6. Hiểu validation file
+file type
+fileFilter()
+
+Ví dụ:
+
+chỉ cho:
+
+png
+jpg
+jpeg
+
+↓
+
+Upload:
+
+pdf
+
+↓
+
+Reject.
+
+file size
+limits
+
+Ví dụ:
+
+5 * 1024 * 1024
+
+=
+
+5MB
+
+Đây là chống spam server.
+
+7. Hiểu static file
+
+Cái này nhiều người mới không hiểu.
+
+Nếu chỉ lưu file:
+
+uploads/cat.png
+
+Browser không xem được.
+
+Phải expose:
+
+app.use(
+  "/uploads",
+  express.static("uploads")
+);
+
+Để:
+
+localhost:3000/uploads/cat.png
+
+mở được.
+
+8. Hiểu vì sao controller chỉ dùng req.file
+
+Controller không upload.
+
+Controller chỉ:
+
+nhận kết quả từ multer
+
+Ví dụ:
+
+export function uploadAvatar(
+  req,
+  res
+) {
+  return res.json({
+    filename:
+      req.file.filename
+  });
+}
+
+Upload đã xong trước đó rồi.
+
+Middleware xử lý trước.
+
+9. Hiểu lỗi phổ biến
+req.file undefined
+
+Sai:
+
+single("avatar")
+
+nhưng Postman:
+
+image
+Unexpected field
+
+Field name không khớp.
+
+ENOENT
+
+Không có:
+
+uploads/
+Only image files allowed
+
+Upload sai loại file.
+
+File too large
+
+Vượt giới hạn.
+
+10. Điều bạn phải tự code lại được sau Day 23
+
+Không nhìn tài liệu vẫn viết được:
+
+Upload avatar
+jpg png jpeg
+Upload CV
+pdf docx
+Giới hạn file size
+5MB
+10MB
+Trả URL ảnh
+/uploads/abc.png
+
+Nếu làm thực tập backend, Day 23 thường là mức:
+
+Intern level chuẩn
+
+vì upload avatar/product image là task rất hay được giao.
