@@ -4,9 +4,11 @@ import {
   refresh,
   logout,
   register,
+  verifyEmail,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/authController.js";
 import asyncHandler from "../middlewares/asyncHandler.js";
-
 import validate from "../middlewares/validate.js";
 import {
   registerSchema,
@@ -15,6 +17,10 @@ import {
 
 //router login
 const router = express.Router();
+
+router.get("/verify-email/:token", verifyEmail);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password/:token", resetPassword);
 
 // router.post("/login", asyncHandler(login));
 router.post("/login", validate(loginSchema), asyncHandler(login));

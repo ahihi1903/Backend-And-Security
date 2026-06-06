@@ -16,6 +16,22 @@ const authSchema = new mongoose.Schema(
       enum: ["admin", "user"], //chỉ cho role hợp lệ
       default: "user",
     },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    verifyToken: String,
+
+    resetPasswordToken: String,
+
+    resetPasswordExpire: Date,
   },
   { timestamps: true }, //tự tạo createdAt & updatedAt
 );

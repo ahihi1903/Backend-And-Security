@@ -8,7 +8,14 @@ import {
   refreshService,
   logoutService,
   registerService,
+  verifyEmailServices,
+  forgotPasswordServices,
+  resetPasswordServices,
 } from "../services/authServices.js";
+
+// import Auth from "../model/Auth.js";
+// import { hashPassword } from "../utils/hash.js";
+// import crypto from "crypto";
 
 //export const refreshTokens = [];
 import { refreshTokens } from "../store/tokenStore.js";
@@ -54,11 +61,45 @@ export async function logout(req, res) {
 
 export async function register(req, res) {
   //hàm đăng ký
-  const { username, password, role } = req.body;
+  //console.log(req.body);
+  const { username, password, role, email, isVerified } = req.body;
 
-  await registerService(username, password, role);
+  //console.log(username, password, role, email, isVerified);
+
+  await registerService(username, password, role, email, isVerified);
 
   return res.status(201).json({
     message: "User created",
+  });
+}
+//
+export async function verifyEmail(req, res) {
+  const { token } = req.params;
+
+  await verifyEmailServices(token);
+
+  res.json({
+    message: "Email verified",
+  });
+}
+
+export async function forgotPassword(req, res) {
+  const { email } = req.body;
+
+  await forgotPasswordServices(email);
+
+  res.json({
+    message: "Email sent",
+  });
+}
+
+export async function resetPassword(req, res) {
+  const { token } = req.params;
+  const newPassword = req.body.password;
+
+  await resetPasswordServices(token, newPassword);
+
+  res.json({
+    message: "Password reset success",
   });
 }

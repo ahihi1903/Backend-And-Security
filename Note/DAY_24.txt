@@ -1,0 +1,429 @@
+🔥 DAY 24 — Email Verify + Forgot Password + Reset Password (chuẩn công ty, học kỹ từng bước)
+
+Hôm nay mình sẽ dạy theo kiểu đi thực tập làm được, không phải chỉ copy code.
+
+Mục tiêu:
+
+✔ Verify email
+✔ Forgot password
+✔ Reset password
+✔ Token hết hạn
+✔ Gửi email thật bằng Gmail
+✔ Flow giống production
+1️⃣ Tổng quan flow công ty
+Verify Email
+Register
+↓
+Server tạo verify token
+↓
+Gửi email
+↓
+User click link
+↓
+Account active
+Forgot Password
+Forgot password
+↓
+Gửi reset token email
+↓
+User click link
+↓
+Nhập password mới
+↓
+Update password
+2️⃣ Cài package
+npm install nodemailer
+3️⃣ Chuẩn bị Gmail App Password
+
+Không dùng password Gmail thật.
+
+Phải tạo:
+
+Google App Password
+Cách tạo
+Bật:
+2-Step Verification
+
+trong Google Account.
+
+Search:
+App Password
+Tạo password cho:
+Mail
+
+Google sẽ cho:
+
+abcd efgh ijkl mnop
+4️⃣ .env
+EMAIL_USER=yourgmail@gmail.com
+EMAIL_PASS=your_google_app_password
+FRONTEND_URL=http://localhost:5173
+
+Ví dụ:
+
+EMAIL_USER=test@gmail.com
+EMAIL_PASS=qwerty123456
+5️⃣ Tạo utility gửi email
+
+📁 utils/sendEmail.js
+
+import nodemailer from "nodemailer";
+
+const transporter =
+  nodemailer.createTransport({
+    service: "gmail",
+
+    auth: {
+      user:
+        process.env.EMAIL_USER,
+
+      pass:
+        process.env.EMAIL_PASS
+    }
+  });
+
+export async function sendEmail(
+  to,
+  subject,
+  html
+) {
+  await transporter.sendMail({
+    from:
+      process.env.EMAIL_USER,
+
+    to,
+    subject,
+    html
+  });
+}
+🧠 Giải thích
+createTransport()
+
+Giống:
+
+SMTP client
+
+để gửi mail.
+
+sendMail()
+
+Thực hiện gửi.
+
+to
+subject
+html
+6️⃣ Update User Schema
+
+📁 models/User.js
+
+Thêm:
+
+email: {
+  type: String,
+  required: true,
+  unique: true
+},
+
+isVerified: {
+  type: Boolean,
+  default: false
+},
+
+verifyToken: String,
+
+resetPasswordToken: String,
+
+resetPasswordExpire: Date
+7️⃣ Register → gửi verify email
+
+📁 services/authService.js
+
+Import:
+
+import crypto from "crypto";
+import { sendEmail }
+from "../utils/sendEmail.js";
+
+Update register:
+
+export async function registerService(
+  username,
+  email,
+  password
+) {
+  const existing =
+    await User.findOne({
+      $or: [
+        { username },
+        { email }
+      ]
+    });
+
+  if (existing) {
+    throw createError(
+      400,
+      "User already exists"
+    );
+  }
+
+  const hashed =
+    await hashPassword(password);
+
+  const verifyToken =
+    crypto.randomBytes(32)
+      .toString("hex");
+
+  const user =
+    await User.create({
+      username,
+      email,
+      password: hashed,
+      verifyToken
+    });
+
+  const verifyUrl =
+`http://localhost:3000/auth/verify-email/${verifyToken}`;
+
+  await sendEmail(
+    email,
+
+    "Verify Email",
+
+`
+<h2>Verify Account</h2>
+
+<p>
+Click link below:
+</p>
+
+<a href="${verifyUrl}">
+Verify Email
+</a>
+`
+  );
+
+  return user;
+}
+🧠 crypto.randomBytes()
+
+Tạo token random:
+
+very secure
+
+Ví dụ:
+
+abf34234234fsdf234
+8️⃣ Verify Email API
+Route
+
+📁 routes/authRoutes.js
+
+router.get(
+  "/verify-email/:token",
+  verifyEmail
+);
+Controller
+
+📁 controllers/authController.js
+
+export async function verifyEmail(
+  req,
+  res
+) {
+  const { token } =
+    req.params;
+
+  const user =
+    await User.findOne({
+      verifyToken: token
+    });
+
+  if (!user) {
+    return res
+      .status(400)
+      .json({
+        message:
+          "Invalid token"
+      });
+  }
+
+  user.isVerified = true;
+
+  user.verifyToken =
+    undefined;
+
+  await user.save();
+
+  res.json({
+    message:
+      "Email verified"
+  });
+}
+9️⃣ Login check verify
+
+Trong login:
+
+if (!user.isVerified) {
+  throw createError(
+    403,
+    "Please verify email"
+  );
+}
+🔟 Forgot Password
+Route
+router.post(
+  "/forgot-password",
+  forgotPassword
+);
+Controller
+export async function forgotPassword(
+  req,
+  res
+) {
+  const { email } =
+    req.body;
+
+  const user =
+    await User.findOne({
+      email
+    });
+
+  if (!user) {
+    throw createError(
+      404,
+      "User not found"
+    );
+  }
+
+  const token =
+    crypto.randomBytes(32)
+      .toString("hex");
+
+  user.resetPasswordToken =
+    token;
+
+  user.resetPasswordExpire =
+    Date.now() +
+    10 * 60 * 1000;
+
+  await user.save();
+
+  const resetLink =
+`http://localhost:3000/auth/reset-password/${token}`;
+
+  await sendEmail(
+    email,
+
+    "Reset Password",
+
+`
+<a href="${resetLink}">
+Reset Password
+</a>
+`
+  );
+
+  res.json({
+    message:
+      "Email sent"
+  });
+}
+1️⃣1️⃣ Reset Password
+Route
+router.post(
+  "/reset-password/:token",
+  resetPassword
+);
+Controller
+export async function resetPassword(
+  req,
+  res
+) {
+  const { token } =
+    req.params;
+
+  const user =
+    await User.findOne({
+      resetPasswordToken:
+        token,
+
+      resetPasswordExpire:
+      { $gt: Date.now() }
+    });
+
+  if (!user) {
+    throw createError(
+      400,
+      "Token expired"
+    );
+  }
+
+  user.password =
+    await hashPassword(
+      req.body.password
+    );
+
+  user.resetPasswordToken =
+    undefined;
+
+  user.resetPasswordExpire =
+    undefined;
+
+  await user.save();
+
+  res.json({
+    message:
+      "Password reset success"
+  });
+}
+🧪 TEST FLOW (QUAN TRỌNG)
+1 Register
+POST /auth/register
+
+↓
+
+Email nhận link.
+
+2 Click verify
+GET /auth/verify-email/token
+
+↓
+
+verified.
+
+3 Login
+
+thành công.
+
+4 Forgot password
+POST /auth/forgot-password
+
+↓
+
+Email reset.
+
+5 Reset password
+POST /auth/reset-password/token
+
+Body:
+
+{
+  "password":"newpassword"
+}
+
+↓
+
+password mới.
+
+🎯 Sau Day 24 bạn đã có
+real auth system
+
+Giống app thật:
+
+Shopee
+Facebook
+GitHub
+
+Level hiện tại:
+
+~80–85% backend intern

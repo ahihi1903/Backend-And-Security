@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    
   },
   { timestamps: true },
 );

@@ -1,0 +1,96 @@
+HTTP & Node.js nền tảng
+
+Nền tảng
+"Em hiểu HTTP request/response hoạt động như thế nào?"
+
+Client gửi request gồm method (GET/POST...), path, headers và body. Server đọc request, xử lý rồi trả response gồm status code và body. Hai bên giao tiếp theo giao thức TCP — mỗi request là một vòng đi-về độc lập, server không nhớ request trước đó (stateless).
+
+Hỏi sâu hơn ↗
+Nền tảng
+"Stream trong Node.js là gì? Tại sao phải dùng req.on('data')?"
+
+Node.js đọc body request theo từng chunk nhỏ (stream) thay vì đọc một lần, để tránh tốn RAM khi nhận file lớn. req.on('data') gom các chunk lại, req.on('end') báo hiệu đọc xong — lúc đó mới parse JSON được. Express thay thế việc này bằng express.json().
+
+Express & Middleware
+
+Express
+"Middleware dùng để làm gì? next() có tác dụng gì?"
+
+Middleware là hàm chạy giữa request và response, theo dạng (req, res, next). Gọi next() để chuyển sang middleware tiếp theo trong chain. Không gọi thì request bị treo. Dùng để xử lý auth, validate dữ liệu, log request, parse body — tách logic ra khỏi controller.
+
+Xem sơ đồ ↗
+Express
+"Error handler trong Express khác middleware thường ở điểm nào?"
+
+Error handler có 4 tham số: (err, req, res, next). Khi gọi next(err) ở bất kỳ middleware nào, Express bỏ qua tất cả middleware thường và nhảy thẳng vào error handler. Đặt error handler cuối cùng trong app.js.
+
+Express
+"Tại sao controller không nên chứa business logic?"
+
+Controller chỉ làm 1 việc: nhận req, gọi service, trả res. Business logic để trong service để có thể tái sử dụng và test độc lập. Nếu đổi từ REST sang GraphQL, chỉ cần viết lại controller — service và model không thay đổi.
+
+JWT & Authentication
+
+JWT
+"JWT hoạt động như thế nào?"
+
+JWT gồm 3 phần: header.payload.signature. Header chứa thuật toán, payload chứa dữ liệu user (id, role), signature là chữ ký bằng secret key để xác minh tính toàn vẹn. Server không lưu token — mỗi request gửi token lên, server chỉ verify signature là đủ biết token có hợp lệ không.
+
+Hỏi sâu hơn ↗
+JWT
+"Tại sao cần refresh token? Access token không đủ sao?"
+
+Access token có thời hạn ngắn (15 phút) để giảm thiệt hại nếu bị đánh cắp. Nếu dài thì bị lộ sẽ dùng được lâu. Refresh token có thời hạn dài (7 ngày), lưu trong httpOnly cookie (JS không đọc được). Khi access token hết hạn, dùng refresh token để lấy access token mới mà không cần đăng nhập lại.
+
+Auth
+"Tại sao không lưu password dạng plain text? bcrypt làm gì?"
+
+Nếu DB bị leak, hacker đọc được password ngay. bcrypt băm password thành chuỗi không thể đảo ngược, kèm salt ngẫu nhiên nên cùng password sẽ ra hash khác nhau mỗi lần. Khi login, dùng bcrypt.compare() để so sánh — không cần biết password gốc.
+
+Auth
+"RBAC là gì? Em implement như thế nào?"
+
+Role-Based Access Control — phân quyền theo vai trò (admin, user). Implement bằng middleware: sau khi verify JWT lấy được req.user.role, middleware role('admin') kiểm tra xem role có trong danh sách được phép không, nếu không thì trả 403 Forbidden.
+
+Security
+
+Security
+"SQL Injection là gì? Phòng tránh thế nào?"
+
+Hacker chèn câu SQL vào input, ví dụ username là ' OR 1=1 -- để bypass login. Phòng tránh bằng parameterized query hoặc ORM (Mongoose, Prisma) — không bao giờ nối chuỗi SQL trực tiếp với input người dùng.
+
+Xem ví dụ ↗
+Security
+"XSS là gì?"
+
+Cross-Site Scripting — hacker chèn script độc vào trang web, khi user khác xem thì script chạy trong browser của họ và có thể đánh cắp cookie/token. Phòng tránh bằng cách sanitize output, dùng httpOnly cho cookie, và set header Content-Security-Policy.
+
+Security
+"httpOnly cookie là gì? Tại sao refresh token nên lưu ở đó?"
+
+httpOnly là cờ trên cookie khiến JavaScript phía client không đọc được cookie đó — document.cookie sẽ không thấy nó. Hacker dùng XSS để đánh cắp token trong localStorage được, nhưng không lấy được httpOnly cookie. Đó là lý do refresh token nên lưu trong httpOnly cookie thay vì localStorage.
+
+Database & Validation
+
+MongoDB
+"NoSQL khác SQL ở điểm gì? Khi nào dùng MongoDB?"
+
+SQL lưu dữ liệu dạng bảng với schema cứng, NoSQL lưu dạng document JSON linh hoạt. MongoDB phù hợp khi dữ liệu thay đổi cấu trúc nhiều, cần scale nhanh, hoặc dữ liệu vốn dĩ dạng JSON. SQL tốt hơn khi cần quan hệ phức tạp giữa các bảng và tính nhất quán cao (như tài chính).
+
+Validation
+"Tại sao cần validation ở tầng middleware thay vì trong service?"
+
+Validate sớm ở middleware giúp chặn request xấu ngay từ đầu, không tốn công chạy vào service hay query DB. Tách riêng bằng Zod schema giúp tái sử dụng và dễ đọc hơn viết if (!username) khắp nơi. Service có thể tin tưởng dữ liệu đã sạch khi nhận được.
+
+Câu hỏi tư duy
+
+Tư duy
+"Nếu API login đang bị brute force, em xử lý thế nào?"
+
+Dùng express-rate-limit giới hạn số request mỗi IP trong khoảng thời gian nhất định. Có thể thêm account lockout sau N lần sai password. Log các lần thất bại để monitor. Nếu nghiêm trọng hơn thì thêm CAPTCHA hoặc require 2FA.
+
+Xem code ↗
+Tư duy
+"Em sẽ cấu trúc project Express như thế nào?"
+
+Tách theo layer: routes/ định nghĩa endpoint, controllers/ xử lý request/response, services/ chứa business logic, models/ định nghĩa schema, middlewares/ chứa auth/validate/error handler, utils/ chứa helper. Mỗi layer chỉ biết layer ngay dưới nó.
