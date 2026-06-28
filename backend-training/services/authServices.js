@@ -13,6 +13,9 @@ import Auth from "../model/Auth.js";
 
 import crypto from "crypto";
 import { sendEmail } from "../utils/sendEmail.js";
+import logger from "../utils/logger.js";
+import RefreshToken from "../model/RefreshToken.js";
+import { hashToken } from "../utils/hashToken.js";
 
 export async function loginService(username, password) {
   //const user = accounts.find((u) => u.username === username);
@@ -29,6 +32,7 @@ export async function loginService(username, password) {
   const isMatch = await comparePassword(password, user.password);
 
   if (!isMatch) {
+    logger.warn("Failed login", { username, reason: "wrong_password" });
     throw createError(401, "Wrong password");
   }
 
@@ -43,14 +47,35 @@ export async function refreshService(refreshToken) {
 
   //const token = cookie.split("=")[1];
   // 👉 CHECK TOKEN CÓ TRONG STORE
-  if (!refreshTokens.includes(refreshToken)) {
-    throw createError(403, "Token revoked");
+  // if (!refreshTokens.includes(refreshToken)) {
+  //   throw createError(403, "Token revoked");
+  // }
+
+  // const user = verifyRefreshToken(refreshToken);
+
+  // if (!user || user.error) {
+  //   throw createError(401, "Invalid token");
+  // }
+  const payload = verifyRefreshToken(refreshToken);
+
+  if (!payload) {
+    throw createError(401, "Invalid refresh token");
   }
 
-  const user = verifyRefreshToken(refreshToken);
+  const storedToken = await RefreshToken.findOne({
+    tokenHash: hashToken(refreshToken),
+    userId: payload.id,
+    expiresAt: { $gt: new Date() },
+  });
+
+  if (!storedToken) {
+    throw createError(401, "Refresh token expired or revoked");
+  }
+
+  const user = await Auth.findById(payload.id);
 
   if (!user) {
-    throw createError(401, "Invalid token");
+    throw createError(401, "User no longer exists");
   }
 
   const accessToken = await generateAccessToken(user);
@@ -59,20 +84,18 @@ export async function refreshService(refreshToken) {
 }
 
 export async function logoutService(refreshToken) {
-  const index = refreshTokens.indexOf(refreshToken);
+  // const index = refreshTokens.indexOf(refreshToken);
 
-  if (index !== -1) {
-    refreshTokens.splice(index, 1);
-  }
+  // if (index !== -1) {
+  //   refreshTokens.splice(index, 1);
+  // }
+  await RefreshToken.deleteOne({
+    tokenHash: hashToken(refreshToken),
+  });
 }
 
-export async function registerService(
-  username,
-  password,
-  role,
-  email,
-  isVerified,
-) {
+//username, password, role, email, isVerified,
+export async function registerService(username, password, email) {
   const existing = await Auth.findOne({
     $or: [{ username }, { email }],
   });
@@ -88,9 +111,9 @@ export async function registerService(
   const user = await Auth.create({
     username,
     password: hashed,
-    role,
+    role: "user",
     email,
-    isVerified,
+    isVerified: false,
     verifyToken,
   });
 
@@ -145,6 +168,7 @@ export async function forgotPasswordServices(email) {
 
   if (!user) {
     throw createError(404, "User not found");
+    return;
   }
 
   const token = crypto.randomBytes(32).toString("hex");
@@ -173,14 +197,11 @@ export async function forgotPasswordServices(email) {
 }
 
 export async function resetPasswordServices(token, newPassword) {
-  
-
   const user = await Auth.findOne({
     resetPasswordToken: token,
 
     resetPasswordExpire: { $gt: Date.now() },
   });
-  
 
   if (!user) {
     throw createError(400, "Token expired");

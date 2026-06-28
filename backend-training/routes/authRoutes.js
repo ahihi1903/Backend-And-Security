@@ -14,13 +14,16 @@ import {
   registerSchema,
   loginSchema,
 } from "../src/validations/authValidation.js";
-
+import {
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from "../src/validations/authValidation.js";
 //router login
 const router = express.Router();
 
 router.get("/verify-email/:token", verifyEmail);
-router.post("/forgot-password", forgotPassword);
-router.post("/reset-password/:token", resetPassword);
+router.post("/forgot-password", validate(forgotPasswordSchema),asyncHandler(forgotPassword));
+router.post("/reset-password/:token", validate(resetPasswordSchema),asyncHandler(resetPassword));
 
 // router.post("/login", asyncHandler(login));
 router.post("/login", validate(loginSchema), asyncHandler(login));

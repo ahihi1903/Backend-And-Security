@@ -4,12 +4,12 @@ const authSchema = new mongoose.Schema(
   {
     username: {
       type: String,
-      require: true, //tính bắt buộc
+      required: true, //tính bắt buộc
       unique: true, //tính độc nhất (không trùng)
     },
     password: {
       type: String,
-      require: true,
+      required: true,
     },
     role: {
       type: String,

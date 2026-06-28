@@ -42,9 +42,10 @@ export function verifyRefreshToken(token) {
   try {
     return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
   } catch (error) {
-    return {
-      error: true,
-      message: error.message,
-    };
+    // return {
+    //   error: true,
+    //   message: error.message,
+    // };
+    return null;
   }
 }

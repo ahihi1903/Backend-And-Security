@@ -1,0 +1,305 @@
+🔥 DAY 25 — Logging + Error Monitoring (Chuẩn công ty)
+
+Sau Day 24, project của bạn đã có:
+
+✔ Register
+✔ Login
+✔ JWT
+✔ Refresh Token
+✔ RBAC
+✔ Upload File
+✔ Verify Email
+✔ Reset Password
+
+Nhưng còn thiếu một thứ cực kỳ quan trọng:
+
+LOGGING
+🎯 Tại sao phải học Logging?
+
+Giả sử production bị lỗi:
+
+User báo:
+"Tôi login không được"
+
+Nếu không có log:
+
+❌ Không biết ai login
+❌ Không biết request gì
+❌ Không biết lỗi ở đâu
+
+Nếu có log:
+
+[2026-06-07 10:00:00]
+POST /auth/login
+
+Body:
+{
+  username: "abc"
+}
+
+Error:
+Wrong password
+
+→ debug trong vài giây.
+
+Logging là gì?
+
+Ghi lại:
+
+Request
+Response
+Error
+Warning
+Security Event
+🚀 Thư viện phổ biến
+Morgan
+
+Ghi log HTTP Request
+
+GET /users
+POST /login
+Winston
+
+Ghi log ứng dụng
+
+error
+warn
+info
+🎯 Hôm nay học
+1. Morgan
+2. Winston
+3. Error Logging
+4. File Log
+5. Request Log
+STEP 1 — Cài package
+npm install morgan winston
+STEP 2 — Morgan
+
+Trong app.js
+
+import morgan from "morgan";
+
+app.use(morgan("dev"));
+Test
+GET /users
+
+Console:
+
+GET /users 200 12ms
+Morgan hoạt động thế nào?
+
+Request:
+
+POST /auth/login
+
+Morgan:
+
+POST /auth/login 200 45ms
+STEP 3 — Winston
+
+Tạo:
+
+📁 utils/logger.js
+
+import winston from "winston";
+
+const logger =
+  winston.createLogger({
+    level: "info",
+
+    format:
+      winston.format.combine(
+        winston.format.timestamp(),
+
+        winston.format.json()
+      ),
+
+    transports: [
+      new winston.transports.Console(),
+
+      new winston.transports.File({
+        filename: "logs/error.log",
+        level: "error"
+      }),
+
+      new winston.transports.File({
+        filename: "logs/combined.log"
+      })
+    ]
+  });
+
+export default logger;
+Giải thích
+Console
+new winston.transports.Console()
+
+In terminal.
+
+error.log
+chỉ lỗi
+combined.log
+mọi log
+STEP 4 — Dùng logger
+
+Ví dụ login:
+
+logger.info(
+  `User login: ${user.username}`
+);
+
+Khi login:
+
+{
+  "level":"info",
+  "message":"User login: admin",
+  "timestamp":"2026..."
+}
+STEP 5 — Log Error
+
+Trong errorHandler
+
+import logger
+from "../utils/logger.js";
+
+export default function errorHandler(
+  err,
+  req,
+  res,
+  next
+) {
+  logger.error({
+    method: req.method,
+    url: req.originalUrl,
+    message: err.message,
+    stack: err.stack
+  });
+
+  res.status(
+    err.status || 500
+  ).json({
+    message: err.message
+  });
+}
+Test
+
+Gọi:
+
+GET /users/999
+
+Lỗi:
+
+{
+  "message":"User not found"
+}
+
+Trong file:
+
+logs/error.log
+
+Có:
+
+{
+  "method":"GET",
+  "url":"/users/999",
+  "message":"User not found"
+}
+STEP 6 — Tạo Request Logger
+
+📁 middlewares/requestLogger.js
+
+import logger
+from "../utils/logger.js";
+
+export default function requestLogger(
+  req,
+  res,
+  next
+) {
+  logger.info({
+    method: req.method,
+    url: req.originalUrl
+  });
+
+  next();
+}
+
+Trong app.js
+
+app.use(requestLogger);
+STEP 7 — Security Log
+
+Ví dụ login sai:
+
+logger.warn(
+  `Failed login:
+  ${username}`
+);
+
+Kết quả:
+
+WARN:
+Failed login: admin
+Chuẩn công ty thường log gì?
+INFO
+user login
+user logout
+create order
+upload file
+WARN
+wrong password
+forbidden access
+ERROR
+database error
+server crash
+🧪 Bài tập Day 25
+Bài 1
+
+Khi:
+
+POST /auth/login
+
+Thành công:
+
+User login successfully
+
+ghi vào:
+
+combined.log
+Bài 2
+
+Khi password sai:
+
+Failed login
+
+ghi:
+
+warn
+Bài 3
+
+Khi upload ảnh:
+
+avatar uploaded
+
+ghi log.
+
+🎯 Sau Day 25 bạn hiểu
+✔ Morgan
+✔ Winston
+✔ Request Logging
+✔ Error Logging
+✔ Security Logging
+✔ Log file
+
+Đây là thứ gần như mọi backend production đều có.
+
+🚀 Day 26
+
+Deploy Backend lên Internet (Render/Railway)
+
+Bạn sẽ đưa project Express + MongoDB hiện tại lên server thật và có URL public như:
+
+https://your-api.onrender.com
+
+để người khác truy cập được, thay vì chỉ chạy ở:
+
+http://localhost:3000

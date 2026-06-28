@@ -12,11 +12,19 @@ export default function auth(req, res, next) {
     });
   }
 
-  const token = header.split(" ")[1];
+  // const token = header.split(" ")[1];
+  const [scheme, token] = header?.split(" ") ?? [];
+
   if (!token) {
     //throw createError(402, "No token");
     return res.status(402).json({
       message: "No token",
+    });
+  }
+
+  if (scheme !== "Bearer" || !token) {
+    return res.status(401).json({
+      message: "Authorization header must use Bearer token",
     });
   }
 
