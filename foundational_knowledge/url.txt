@@ -1,0 +1,87 @@
+Base URL hiện tại:
+
+  http://localhost:3000
+
+  Chạy server:
+
+  node server.js
+
+  ## API xác thực
+
+   Method    URL                            Body
+  ━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   POST      /auth/register                 {"username":"testuser","password":"123456","email":"you@example.com"}
+  ────────  ─────────────────────────────  ───────────────────────────────────────────────────────────────────────
+   GET       /auth/verify-email/:token      Không có
+  ────────  ─────────────────────────────  ───────────────────────────────────────────────────────────────────────
+   POST      /auth/login                    {"username":"testuser","password":"123456"}
+  ────────  ─────────────────────────────  ───────────────────────────────────────────────────────────────────────
+   POST      /auth/refresh                  Không có; dùng cookie refreshToken
+  ────────  ─────────────────────────────  ───────────────────────────────────────────────────────────────────────
+   POST      /auth/logout                   Không có; dùng cookie refreshToken
+  ────────  ─────────────────────────────  ───────────────────────────────────────────────────────────────────────
+   POST      /auth/forgot-password          {"email":"you@example.com"}
+  ────────  ─────────────────────────────  ───────────────────────────────────────────────────────────────────────
+   POST      /auth/reset-password/:token    {"password":"NewPass123"}
+
+  Ví dụ URL đầy đủ:
+
+  POST http://localhost:3000/auth/register
+  POST http://localhost:3000/auth/login
+  POST http://localhost:3000/auth/refresh
+
+  Sau khi đăng ký, tài khoản phải được xác thực bằng link gửi qua email thì mới đăng nhập được.
+
+  ## API Users
+
+   Method    URL           Quyền               Body/query
+  ━━━━━━━━  ━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━
+   POST      /users        Công khai           {"name":"Nguyen Van A"}
+  ────────  ────────────  ──────────────────  ─────────────────────────
+   GET       /users        Admin               Query tùy chọn
+  ────────  ────────────  ──────────────────  ─────────────────────────
+   GET       /users/:id    Admin/User/Staff    ID MongoDB
+  ────────  ────────────  ──────────────────  ─────────────────────────
+   DELETE    /users/:id    Admin               ID MongoDB
+
+  Ví dụ truy vấn danh sách:
+
+  GET http://localhost:3000/users?page=1&limit=5&search=nguyen&sort=name
+
+  Các API được bảo vệ cần header:
+
+  Authorization: Bearer <accessToken>
+
+  Lấy accessToken từ response của /auth/login.
+
+  Lưu ý: tài khoản đăng ký mặc định có role user, nên không gọi được GET /users và DELETE /users/:id. Muốn test hai API này, cần
+  đổi role tài khoản thành admin trong MongoDB.
+
+  ## Upload avatar
+
+  POST http://localhost:3000/upload/avatar
+
+  Trong Postman:
+
+  - Authorization: Bearer Token
+  - Body → form-data
+  - Key: avatar
+  - Type: File
+  - Chọn PNG/JPEG, tối đa 5 MB
+
+  Ảnh sau khi upload có URL:
+
+  GET http://localhost:3000/uploads/<filename>
+
+  ## Thứ tự test đề xuất
+
+  1. POST /auth/register
+  2. Mở link xác thực trong email
+  3. POST /auth/login
+  4. Sao chép accessToken
+  5. Test /users/:id hoặc /upload/avatar
+  6. Test /auth/refresh — Postman thường tự giữ cookie
+  7. POST /auth/logout
+
+  Lưu ý bảo mật: file .env hiện chứa thông tin MongoDB và email ở dạng rõ. Nếu repository từng được chia sẻ hoặc đẩy lên Git, nên
+  đổi ngay các mật khẩu này và thêm .env vào .gitignore.

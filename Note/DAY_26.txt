@@ -1,0 +1,333 @@
+🔥 DAY 26 — Deploy Backend lên Internet (Render)
+
+Đến Day 26, project của bạn đã có:
+
+✔ Express
+✔ MongoDB
+✔ JWT
+✔ Refresh Token
+✔ RBAC
+✔ Upload File
+✔ Email Verify
+✔ Logging
+
+Nhưng hiện tại project chỉ chạy ở:
+
+http://localhost:3000
+
+👉 Chỉ máy bạn truy cập được.
+
+Hôm nay chúng ta sẽ đưa project lên Internet:
+
+https://your-api.onrender.com
+
+Để:
+
+✔ Ai cũng truy cập được
+✔ Đưa vào CV/GitHub
+✔ Frontend kết nối được
+✔ Giống môi trường công ty
+🎯 Mục tiêu Day 26
+
+Deploy thành công:
+
+Express + MongoDB + Environment Variables
+
+lên:
+
+Render
+Tại sao chọn Render?
+✔ Miễn phí
+✔ Dễ dùng
+✔ Hỗ trợ Node.js
+✔ Hỗ trợ biến môi trường
+✔ Công ty nhỏ/startup dùng nhiều
+BƯỚC 1 — Đưa code lên GitHub
+
+Nếu chưa có repository:
+
+git init
+
+git add .
+
+git commit -m "First deploy"
+
+git branch -M main
+
+git remote add origin <repo-url>
+
+git push -u origin main
+
+Ví dụ:
+
+https://github.com/kiet/backend-training
+BƯỚC 2 — Tạo tài khoản Render
+
+Truy cập:
+
+Render
+
+Đăng nhập bằng GitHub.
+
+BƯỚC 3 — Tạo Web Service
+
+Chọn:
+
+New +
+
+↓
+
+Web Service
+
+↓
+
+Chọn repository GitHub của bạn.
+
+BƯỚC 4 — Cấu hình Deploy
+Name
+backend-training
+Runtime
+Node
+Build Command
+npm install
+Start Command
+
+Nếu server của bạn:
+
+server.js
+
+thì:
+
+node server.js
+
+Nếu dùng:
+
+nodemon
+
+❌ Không dùng.
+
+Production phải là:
+
+node server.js
+BƯỚC 5 — Environment Variables
+
+Rất quan trọng.
+
+Trong Render:
+
+Environment
+
+↓
+
+Thêm:
+
+PORT=10000
+
+MONGO_URI=...
+
+JWT_ACCESS_SECRET=...
+
+JWT_REFRESH_SECRET=...
+
+JWT_EXPIRES_IN=15m
+
+EMAIL_USER=...
+
+EMAIL_PASS=...
+
+⚠️ Tuyệt đối không push:
+
+.env
+
+lên GitHub.
+
+Trong .gitignore:
+
+.env
+BƯỚC 6 — Server phải đọc PORT động
+
+Trong:
+
+server.js
+
+Không viết:
+
+app.listen(3000);
+
+Mà phải:
+
+const PORT =
+  process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(
+    `Server running on ${PORT}`
+  );
+});
+BƯỚC 7 — MongoDB Atlas
+
+Nếu đang dùng:
+
+mongodb://localhost:27017
+
+❌ Render không truy cập được.
+
+Phải dùng:
+
+MongoDB Atlas
+
+Truy cập:
+
+MongoDB Atlas
+
+Tạo cluster miễn phí.
+
+Ví dụ URI:
+
+mongodb+srv://username:password@cluster.mongodb.net/backend
+
+Lưu vào:
+
+MONGO_URI=...
+BƯỚC 8 — Sửa CORS
+
+Frontend deploy khác domain.
+
+Cài:
+
+npm install cors
+
+Trong:
+
+app.js
+import cors from "cors";
+
+app.use(cors());
+
+Hoặc:
+
+app.use(
+  cors({
+    origin:
+      "https://frontend.onrender.com"
+  })
+);
+BƯỚC 9 — Deploy
+
+Nhấn:
+
+Create Web Service
+
+Render sẽ:
+
+clone repo
+npm install
+start server
+Nếu thành công
+
+Bạn sẽ nhận:
+
+https://backend-training.onrender.com
+Test
+
+Browser:
+
+https://backend-training.onrender.com
+
+Hoặc:
+
+https://backend-training.onrender.com/users
+Test Postman
+
+Ví dụ:
+
+POST
+https://backend-training.onrender.com/auth/login
+
+Body:
+
+{
+  "username":"admin",
+  "password":"123456"
+}
+Lỗi thường gặp
+1
+Cannot GET /
+
+Không sao.
+
+Bạn chưa tạo:
+
+app.get("/", ...)
+
+Thêm:
+
+app.get("/", (req, res) => {
+  res.json({
+    message: "API running"
+  });
+});
+2
+MongoNetworkError
+
+Sai:
+
+MONGO_URI
+3
+secretOrPrivateKey must have a value
+
+Quên:
+
+JWT_ACCESS_SECRET
+
+trên Render.
+
+4
+Port already in use
+
+Hardcode:
+
+3000
+Chuẩn production
+
+Thường:
+
+GitHub
+↓
+Render/Railway
+↓
+Mongo Atlas
+↓
+Cloudinary
+🎯 Bài tập Day 26
+
+Deploy project hiện tại của bạn:
+
+✔ Register
+✔ Login
+✔ JWT
+✔ MongoDB
+✔ Upload Avatar
+✔ Email Verify
+
+lên Render.
+
+Sau đó test:
+
+POST /auth/register
+POST /auth/login
+GET /users
+
+bằng URL public.
+
+🚀 Sau Day 26 bạn đã có
+✔ Deploy Backend
+✔ Production Environment
+✔ Mongo Atlas
+✔ Environment Variables
+✔ CORS
+✔ Public API
+
+Đây là một cột mốc rất quan trọng vì từ giờ project của bạn đã trở thành:
+
+Backend thực sự chạy trên Internet
