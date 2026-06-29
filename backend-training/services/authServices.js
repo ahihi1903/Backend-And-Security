@@ -9,7 +9,7 @@ import {
 } from "../utils/jwt.js";
 import createError from "../middlewares/createError.js";
 import { refreshTokens } from "../store/tokenStore.js";
-import Auth from "../model/Auth.js";
+import Auth from "../model/auth.js";
 
 import crypto from "crypto";
 import { sendEmail } from "../utils/sendEmail.js";
