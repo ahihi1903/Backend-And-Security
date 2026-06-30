@@ -1,0 +1,19 @@
+Build image (chỉ cần khi code thay đổi): (termenal)
+
+docker build -t backend-training .
+
+Sau đó chạy:
+
+docker run -p 3000:3000 backend-training
+
+Server cũng chạy ở
+
+http://localhost:3000
+
+Nhưng lúc này
+
+Node
+npm
+Environment
+
+đều chạy trong Docker chứ không phải trên Windows.

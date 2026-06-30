@@ -1,0 +1,408 @@
+🔥 DAY 27 — Docker cho Backend (Chuẩn công ty)
+
+Đến Day 27, project của bạn đã có:
+
+✔ Express
+✔ MongoDB
+✔ JWT
+✔ RBAC
+✔ Upload
+✔ Email
+✔ Logging
+✔ Deploy
+
+Nhưng vẫn còn một vấn đề lớn.
+
+🤔 Tại sao code chạy trên máy mình nhưng lên server lại lỗi?
+
+Ví dụ:
+
+Máy bạn:
+
+Node.js 22
+MongoDB 8
+Windows
+
+Máy đồng đội:
+
+Node.js 20
+MongoDB 7
+Ubuntu
+
+Server:
+
+Linux
+Node.js 24
+
+Có thể xảy ra:
+
+❌ Chạy trên máy A
+✔ Chạy trên máy B
+❌ Deploy lỗi
+
+Đây chính là lý do Docker ra đời.
+
+Docker là gì?
+
+Docker giống như một chiếc hộp chứa toàn bộ môi trường chạy của ứng dụng.
+
+Ví dụ:
+
+Project
+│
+├── Source Code
+├── NodeJS
+├── npm
+├── Express
+├── MongoDB Driver
+└── Environment
+
+Đóng gói thành:
+
+Docker Image
+
+Sau đó chạy ở bất kỳ đâu:
+
+Windows
+
+Linux
+
+MacOS
+
+Cloud
+
+đều giống hệt nhau.
+
+Docker hoạt động như thế nào?
+Source Code
+        │
+        ▼
+ Dockerfile
+        │
+        ▼
+ Docker Image
+        │
+        ▼
+ Docker Container
+Một số khái niệm quan trọng
+1. Image
+
+Image giống như:
+
+File ISO của Windows
+
+Chỉ là bản mẫu.
+
+Ví dụ:
+
+node:22
+
+ubuntu
+
+mongo
+
+redis
+2. Container
+
+Container là Image đang chạy.
+
+Ví dụ:
+
+Image
+
+↓
+
+Container
+
+↓
+
+Server đang chạy
+3. Dockerfile
+
+Dockerfile là:
+
+Công thức tạo Image
+
+Ví dụ:
+
+FROM node:22
+
+COPY
+
+RUN npm install
+
+CMD node server.js
+4. Docker Compose
+
+Nếu project có:
+
+Backend
+
+MongoDB
+
+Redis
+
+Docker Compose sẽ chạy tất cả cùng lúc.
+
+Cài Docker
+
+Tải:
+
+Docker Desktop
+
+Sau khi cài:
+
+docker --version
+
+Ví dụ:
+
+Docker version 28.x.x
+Tạo Dockerfile
+
+Trong thư mục project:
+
+Dockerfile
+
+Nội dung:
+
+FROM node:22
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["node","server.js"]
+Giải thích
+FROM
+FROM node:22
+
+Dùng Image Node.js 22.
+
+WORKDIR
+WORKDIR /app
+
+Thư mục làm việc trong container.
+
+COPY
+COPY package*.json ./
+
+Copy:
+
+package.json
+
+package-lock.json
+RUN
+RUN npm install
+
+Cài dependencies.
+
+COPY . .
+
+Copy toàn bộ source.
+
+EXPOSE
+EXPOSE 3000
+
+Container sẽ dùng cổng 3000.
+
+CMD
+CMD ["node","server.js"]
+
+Lệnh chạy server.
+
+Build Image
+docker build -t backend-training .
+
+Giải thích:
+
+-t
+
+đặt tên image
+
+Ví dụ:
+
+backend-training
+Kiểm tra Image
+docker images
+
+Ví dụ:
+
+REPOSITORY
+
+backend-training
+
+node
+Chạy Container
+docker run -p 3000:3000 backend-training
+
+Giải thích:
+
+Host
+
+3000
+
+↓
+
+Container
+
+3000
+
+Browser:
+
+http://localhost:3000
+
+vẫn chạy bình thường.
+
+Kiểm tra Container
+docker ps
+
+Ví dụ:
+
+CONTAINER ID
+
+STATUS
+
+PORTS
+Dừng Container
+docker stop <container_id>
+Docker Compose
+
+Project thường có:
+
+Backend
+
+MongoDB
+
+Redis
+
+Tạo:
+
+docker-compose.yml
+version: "3.9"
+
+services:
+
+  backend:
+
+    build: .
+
+    ports:
+      - "3000:3000"
+
+    env_file:
+      - .env
+
+    depends_on:
+      - mongo
+
+  mongo:
+
+    image: mongo
+
+    ports:
+      - "27017:27017"
+
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+
+  mongo-data:
+Chạy
+docker compose up
+
+Docker sẽ:
+
+Build Backend
+
+↓
+
+Chạy MongoDB
+
+↓
+
+Chạy Backend
+Dừng
+docker compose down
+Thêm .dockerignore
+
+Tạo file:
+
+.dockerignore
+node_modules
+
+.git
+
+.env
+
+logs
+
+uploads
+
+Giúp Image nhẹ hơn.
+
+Cấu trúc project
+project/
+
+│
+
+├── Dockerfile
+
+├── docker-compose.yml
+
+├── .dockerignore
+
+├── package.json
+
+├── server.js
+Docker trong công ty
+
+Một hệ thống thực tế thường như sau:
+
+Docker Compose
+
+│
+
+├── Backend
+
+├── MongoDB
+
+├── Redis
+
+├── Nginx
+
+└── Frontend
+
+Mỗi service là một container riêng.
+
+🧪 Bài tập Day 27
+Cài Docker Desktop.
+Tạo Dockerfile cho project Express.
+Build Image bằng:
+docker build -t backend-training .
+Chạy:
+docker run -p 3000:3000 backend-training
+Tạo docker-compose.yml để chạy Express + MongoDB cùng lúc.
+🎯 Sau Day 27 bạn đã biết
+✔ Docker là gì
+✔ Image
+✔ Container
+✔ Dockerfile
+✔ Docker Compose
+✔ Docker Ignore
+✔ Build Image
+✔ Run Container
+
+Đây là kỹ năng gần như bắt buộc khi làm việc với backend ở môi trường chuyên nghiệp.
+
+🚀 Day 28
+
+Bạn sẽ làm Mini Project Backend hoàn chỉnh bằng chính kiến thức từ Day 1 → Day 27.
+
+Đó sẽ là project đầu tiên đủ chất lượng để đưa vào GitHub Portfolio và sử dụng khi ứng tuyển thực tập Backend.
